@@ -218,12 +218,17 @@
                     </div>
                 </div>
 
+                <div class="form-group">
+                    <label for="mobileNumber">Mobile Number for Verification *</label>
+                    <input type="tel" id="mobileNumber" name="mobileNumber" placeholder="e.g. +1 234 567 8900" required>
+                </div>
+
                 <button type="submit" class="submit-btn">Create Account ✨</button>
             </form>
 
             <div style="display: grid; gap: 0.75rem; margin-top: 1.25rem;">
-                <button type="button" class="submit-btn" style="margin-top: 0; background: #FFFFFF; color: #1DA1F2; border: 1px solid var(--border-color); box-shadow: none;" onclick="localStorage.setItem('loggedInUser', 'google_demo'); window.location.href='index.html';">🔵 Continue with Google</button>
-                <button type="button" class="submit-btn" style="margin-top: 0; background: #111827; color: white; border: 1px solid var(--border-color); box-shadow: none;" onclick="localStorage.setItem('loggedInUser', 'github_demo'); window.location.href='index.html';">🐙 Continue with GitHub</button>
+                <button type="button" id="googleSocialBtn" class="submit-btn" style="margin-top: 0; background: #FFFFFF; color: #1DA1F2; border: 1px solid var(--border-color); box-shadow: none;">🔵 Continue with Google</button>
+                <button type="button" id="githubSocialBtn" class="submit-btn" style="margin-top: 0; background: #111827; color: white; border: 1px solid var(--border-color); box-shadow: none;">🐙 Continue with GitHub</button>
             </div>
 
             <div class="back-link">
@@ -236,6 +241,45 @@
 
     <script>
         const signupForm = document.getElementById('signupForm');
+        const googleSocialBtn = document.getElementById('googleSocialBtn');
+        const githubSocialBtn = document.getElementById('githubSocialBtn');
+
+        function createSocialAccount(provider) {
+            const providerMap = {
+                google: { label: 'Google', prefix: 'google' },
+                github: { label: 'GitHub', prefix: 'github' }
+            };
+
+            const chosenProvider = providerMap[provider];
+            if (!chosenProvider) return;
+
+            const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+            const username = `${chosenProvider.prefix}_${uniqueSuffix}`;
+            const password = `${chosenProvider.prefix}@${uniqueSuffix}`;
+            const fullName = `${chosenProvider.label} User ${Math.floor(Math.random() * 9900 + 100)}`;
+            const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
+
+            const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
+            existingUsers.push({ username, password, fullName, mobile });
+            localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
+            localStorage.setItem('userProfile', JSON.stringify({
+                fullName,
+                username,
+                emoji: '👤',
+                bio: '',
+                location: '',
+                website: '',
+                joinDate: 'March 2026',
+                followers: 0,
+                following: 0,
+                posts: 0
+            }));
+            localStorage.setItem('loggedInUser', username);
+            window.location.href = 'index.html';
+        }
+
+        googleSocialBtn.addEventListener('click', () => createSocialAccount('google'));
+        githubSocialBtn.addEventListener('click', () => createSocialAccount('github'));
 
         // Form validation
         signupForm.addEventListener('submit', (e) => {
@@ -245,6 +289,7 @@
             const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value.trim();
             const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const mobileNumber = document.getElementById('mobileNumber').value.trim();
             const nameError = document.getElementById('nameError');
             const usernameError = document.getElementById('usernameError');
 
@@ -268,6 +313,11 @@
 
             if (!password || password.length < 4) {
                 alert('Password must be at least 4 characters long.');
+                isValid = false;
+            }
+
+            if (!mobileNumber || mobileNumber.length < 8) {
+                alert('Please enter a valid mobile number for verification.');
                 isValid = false;
             }
 
@@ -298,7 +348,7 @@
                     posts: 0
                 };
 
-                existingUsers.push({ username, password, fullName });
+                existingUsers.push({ username, password, fullName, mobile: mobileNumber });
                 localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
                 localStorage.setItem('userProfile', JSON.stringify(profileData));
                 localStorage.setItem('loggedInUser', username);

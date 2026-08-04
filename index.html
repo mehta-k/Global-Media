@@ -159,7 +159,8 @@
             cursor: pointer;
         }
 
-        .recovery-modal {
+        .recovery-modal,
+        .mobile-confirm-modal {
             position: fixed;
             inset: 0;
             display: none;
@@ -170,7 +171,8 @@
             z-index: 1000;
         }
 
-        .recovery-card {
+        .recovery-card,
+        .mobile-confirm-card {
             width: min(420px, 100%);
             background: var(--bg-primary);
             border-radius: 18px;
@@ -178,11 +180,13 @@
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
         }
 
-        .recovery-card h2 {
+        .recovery-card h2,
+        .mobile-confirm-card h2 {
             margin-bottom: 0.5rem;
         }
 
-        .recovery-card input {
+        .recovery-card input,
+        .mobile-confirm-card input {
             width: 100%;
             padding: 0.85rem 1rem;
             border-radius: 12px;
@@ -192,7 +196,8 @@
             margin-top: 0.5rem;
         }
 
-        .recovery-card button {
+        .recovery-card button,
+        .mobile-confirm-card button {
             margin-top: 1rem;
             width: 100%;
             padding: 0.85rem 1rem;
@@ -244,6 +249,17 @@
             <input type="password" id="recoveryConfirmPassword" placeholder="Confirm the new password">
             <div id="recoveryMessage" class="login-error" style="margin-top: 0.75rem;"></div>
             <button type="button" id="recoverPasswordBtn">Reset Password</button>
+        </div>
+    </div>
+
+    <div id="mobileConfirmModal" class="mobile-confirm-modal">
+        <div class="mobile-confirm-card">
+            <h2>Mobile Confirmation</h2>
+            <p id="mobileConfirmText" style="color: var(--text-secondary); margin-bottom: 0.75rem;">A confirmation code has been sent to your mobile device.</p>
+            <label for="mobileCodeInput">Enter 6-digit confirmation code</label>
+            <input type="text" id="mobileCodeInput" placeholder="e.g. 123456" maxlength="6">
+            <div id="mobileConfirmMessage" class="login-error" style="margin-top: 0.75rem;"></div>
+            <button type="button" id="confirmDeviceButton">Confirm Device</button>
         </div>
     </div>
 
@@ -335,6 +351,13 @@
         const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
         const recoverPasswordBtn = document.getElementById('recoverPasswordBtn');
         const recoveryMessage = document.getElementById('recoveryMessage');
+        const mobileConfirmModal = document.getElementById('mobileConfirmModal');
+        const mobileConfirmText = document.getElementById('mobileConfirmText');
+        const mobileConfirmMessage = document.getElementById('mobileConfirmMessage');
+        const mobileCodeInput = document.getElementById('mobileCodeInput');
+        const confirmDeviceButton = document.getElementById('confirmDeviceButton');
+        let pendingLoginUser = null;
+        let pendingCode = null;
 
         function showApp() {
             authGate.style.display = 'none';
@@ -381,6 +404,27 @@
             }
         }
 
+        function generateVerificationCode() {
+            return String(Math.floor(100000 + Math.random() * 900000));
+        }
+
+        function sendMobileVerification(user) {
+            const phoneDigits = (user.mobile || '********').replace(/\D/g, '');
+            const masked = phoneDigits ? `ending in ${phoneDigits.slice(-4)}` : 'on your registered mobile.';
+            pendingCode = generateVerificationCode();
+            localStorage.setItem(`mobileOtp_${user.username}`, pendingCode);
+            mobileConfirmText.textContent = `A 6-digit confirmation code was sent to your mobile device ${masked}. Demo code: ${pendingCode}`;
+            mobileConfirmMessage.textContent = '';
+            mobileConfirmModal.style.display = 'flex';
+        }
+
+        function finishLogin(username) {
+            localStorage.setItem('loggedInUser', username);
+            loginError.textContent = '';
+            mobileConfirmModal.style.display = 'none';
+            checkSession();
+        }
+
         function loginUser(username, password, source = 'local') {
             const users = getRegisteredUsers();
             const found = users.find(user => user.username === username && user.password === password);
@@ -392,34 +436,45 @@
                 return false;
             }
 
-            localStorage.setItem('loggedInUser', found.username);
-            loginError.textContent = '';
-            checkSession();
+            if (found.mobile) {
+                pendingLoginUser = found.username;
+                sendMobileVerification(found);
+                return true;
+            }
+
+            finishLogin(found.username);
             return true;
         }
 
         function createSocialUser(provider) {
             const providerMap = {
-                google: { username: 'google_demo', password: 'google@123', fullName: 'Google Demo User' },
-                github: { username: 'github_demo', password: 'github@123', fullName: 'GitHub Demo User' },
-                demo: { username: 'demo_user', password: 'demo@123', fullName: 'Demo User' }
+                google: { label: 'Google', prefix: 'google' },
+                github: { label: 'GitHub', prefix: 'github' },
+                demo: { label: 'Demo', prefix: 'demo' }
             };
 
-            const socialUser = providerMap[provider];
-            if (!socialUser) return;
+            const socialProvider = providerMap[provider];
+            if (!socialProvider) return;
+
+            const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
+            const username = `${socialProvider.prefix}_${uniqueSuffix}`;
+            const password = `${socialProvider.prefix}@${uniqueSuffix}`;
+            const fullName = `${socialProvider.label} User ${Math.floor(Math.random() * 9900 + 100)}`;
+            const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
+            const socialUser = {
+                username,
+                password,
+                fullName,
+                mobile
+            };
 
             const users = getRegisteredUsers();
-            let existingUser = users.find(user => user.username === socialUser.username);
+            users.push(socialUser);
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
 
-            if (!existingUser) {
-                users.push({ username: socialUser.username, password: socialUser.password, fullName: socialUser.fullName });
-                localStorage.setItem('registeredUsers', JSON.stringify(users));
-            }
-
-            ensureProfile(socialUser.username, socialUser.fullName);
-            localStorage.setItem('loggedInUser', socialUser.username);
+            ensureProfile(username, fullName);
+            finishLogin(username);
             loginError.textContent = '';
-            checkSession();
         }
 
         document.querySelectorAll('[data-social]').forEach(button => {
@@ -434,6 +489,29 @@
         recoveryModal.addEventListener('click', (event) => {
             if (event.target === recoveryModal) {
                 recoveryModal.style.display = 'none';
+            }
+        });
+
+        mobileConfirmModal.addEventListener('click', (event) => {
+            if (event.target === mobileConfirmModal) {
+                mobileConfirmModal.style.display = 'none';
+            }
+        });
+
+        confirmDeviceButton.addEventListener('click', () => {
+            const typedCode = mobileCodeInput.value.trim();
+            const storedCode = localStorage.getItem(`mobileOtp_${pendingLoginUser}`);
+
+            if (!pendingLoginUser || !storedCode) {
+                mobileConfirmMessage.textContent = 'No pending device verification found.';
+                return;
+            }
+
+            if (typedCode === storedCode) {
+                localStorage.removeItem(`mobileOtp_${pendingLoginUser}`);
+                finishLogin(pendingLoginUser);
+            } else {
+                mobileConfirmMessage.textContent = 'Incorrect confirmation code. Please try again.';
             }
         });
 
