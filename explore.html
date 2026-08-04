@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explore | Global Media</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>Global Media</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="explore.html" class="nav-link active">Explore</a>
+                <a href="reels.html" class="nav-link">Reels</a>
+                <a href="messages.html" class="nav-link">Messages</a>
+                <a href="user-profile.html" class="nav-link">Profile</a>
+            </div>
+            <div class="user-menu">
+                <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">🌙</button>
+                <div id="userAvatarNav" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); font-size: 1.5rem; cursor: pointer; border: 2px solid var(--primary-color);">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; grid-template-columns: 1fr;">
+        <main style="flex: 3;">
+            <!-- Search Bar -->
+            <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+                <input type="text" placeholder="🔍 Search posts, people, topics..." style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 24px; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem;">
+            </div>
+
+            <!-- Featured Posts/Articles -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">⭐ Featured Posts</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                    <!-- Featured Post 1 -->
+                    <div style="background: var(--bg-primary); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                        <img src="https://via.placeholder.com/280x160" alt="Featured" style="width: 100%; height: 160px; object-fit: cover;">
+                        <div style="padding: 1rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.5rem 0;">Featured Article</p>
+                            <h3 style="font-size: 1rem; margin: 0 0 0.5rem 0;">Getting Started with React.js</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">A comprehensive guide to building modern web applications with React...</p>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                        <img src="https://via.placeholder.com/280x160" alt="Featured" style="width: 100%; height: 160px; object-fit: cover;">
+                        <div style="padding: 1rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.5rem 0;">Featured Article</p>
+                            <h3 style="font-size: 1rem; margin: 0 0 0.5rem 0;">Web Design Trends 2024</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">Discover the latest design trends and best practices for modern UIs...</p>
+                        </div>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; overflow: hidden; border: 1px solid var(--border-color); cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;">
+                        <img src="https://via.placeholder.com/280x160" alt="Featured" style="width: 100%; height: 160px; object-fit: cover;">
+                        <div style="padding: 1rem;">
+                            <p style="font-size: 0.85rem; color: var(--text-secondary); margin: 0 0 0.5rem 0;">Featured Article</p>
+                            <h3 style="font-size: 1rem; margin: 0 0 0.5rem 0;">JavaScript Performance Tips</h3>
+                            <p style="font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.4;">Optimize your JavaScript code for better performance and efficiency...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Categories Section -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">📂 Browse by Category</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
+                    <div style="background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">💻 Technology</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">85.2K posts</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #1DA1F2 0%, #14171A 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">🎨 Design</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">56.3K posts</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #00BFA5 0%, #009688 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">📱 Mobile Dev</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">42.1K posts</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #FFB400 0%, #FF6D00 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">🚀 Startup</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">33.8K posts</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #E91E63 0%, #C2185B 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">🎓 Learning</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">71.5K posts</p>
+                    </div>
+                    <div style="background: linear-gradient(135deg, #673AB7 0%, #512DA8 100%); border-radius: 12px; padding: 1.5rem; color: white; cursor: pointer; text-align: center;">
+                        <h3 style="font-size: 1.3rem; margin: 0;">🤖 AI/ML</h3>
+                        <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48.2K posts</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trending Topics -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">🔥 Trending Topics</h2>
+                <div style="background: var(--bg-primary); border-radius: 12px; border: 1px solid var(--border-color);">
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="margin: 0; font-weight: bold;">#WebDevelopment</p>
+                                <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">245.8K posts • Trending Worldwide</p>
+                            </div>
+                            <span style="font-size: 1.5rem;">📈</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="margin: 0; font-weight: bold;">#ReactJS</p>
+                                <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">189.3K posts • Trending in Tech</p>
+                            </div>
+                            <span style="font-size: 1.5rem;">📈</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="margin: 0; font-weight: bold;">#JavaScript</p>
+                                <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">156.7K posts • Trending Worldwide</p>
+                            </div>
+                            <span style="font-size: 1.5rem;">📈</span>
+                        </div>
+                    </div>
+                    <div style="padding: 1rem; cursor: pointer;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <p style="margin: 0; font-weight: bold;">#CodeNewbie</p>
+                                <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.9rem;">98.2K posts • Trending in Learning</p>
+                            </div>
+                            <span style="font-size: 1.5rem;">📈</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommended Creators -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">👑 Recommended Creators</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem;">
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); text-align: center;">
+                        <img src="https://via.placeholder.com/80" alt="Creator" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem;">
+                        <h3 style="margin: 0 0 0.25rem 0;">Kyle Simpson</h3>
+                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">@getify</p>
+                        <p style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">JavaScript Expert | Book Author | Teacher</p>
+                        <div style="display: flex; justify-content: space-around; margin: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            <div><span style="font-weight: bold; color: var(--text-primary);">234K</span><br>Followers</div>
+                            <div><span style="font-weight: bold; color: var(--text-primary);">1.2K</span><br>Posts</div>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;">Follow</button>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); text-align: center;">
+                        <img src="https://via.placeholder.com/80" alt="Creator" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem;">
+                        <h3 style="margin: 0 0 0.25rem 0;">Sarah Drasner</h3>
+                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">@sarah_edo</p>
+                        <p style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">Web Animation | Vue.js Expert | Developer</p>
+                        <div style="display: flex; justify-content: space-around; margin: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            <div><span style="font-weight: bold; color: var(--text-primary);">189K</span><br>Followers</div>
+                            <div><span style="font-weight: bold; color: var(--text-primary);">856</span><br>Posts</div>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;">Follow</button>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); text-align: center;">
+                        <img src="https://via.placeholder.com/80" alt="Creator" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; margin: 0 auto 1rem;">
+                        <h3 style="margin: 0 0 0.25rem 0;">Brad Traversy</h3>
+                        <p style="margin: 0 0 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">@traversymedia</p>
+                        <p style="margin: 0 0 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">Web Dev Educator | Course Creator</p>
+                        <div style="display: flex; justify-content: space-around; margin: 1rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                            <div><span style="font-weight: bold; color: var(--text-primary);">456K</span><br>Followers</div>
+                            <div><span style="font-weight: bold; color: var(--text-primary);">3.2K</span><br>Posts</div>
+                        </div>
+                        <button class="btn btn-primary" style="width: 100%;">Follow</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Saved Collections -->
+            <div style="margin-bottom: 2rem;">
+                <h2 style="font-size: 1.5rem; margin-bottom: 1rem;">📚 Saved Collections</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem;">
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📖</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">Web Development Essentials</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">42 saved posts</p>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🎨</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">UI/UX Design Tips</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">28 saved posts</p>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚀</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">Startup Resources</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">35 saved posts</p>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔒</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">Security & Best Practices</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">19 saved posts</p>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🤖</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">AI & Machine Learning</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">51 saved posts</p>
+                    </div>
+                    <div style="background: var(--bg-primary); border-radius: 12px; padding: 1.5rem; border: 1px solid var(--border-color); cursor: pointer;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">📊</div>
+                        <h3 style="margin: 0 0 0.5rem 0;">Data Visualization</h3>
+                        <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">24 saved posts</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Sidebar -->
+        <aside style="flex: 1; display: flex; flex-direction: column; gap: 1.5rem;">
+            <!-- Quick Stats -->
+            <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.1rem; margin: 0 0 1rem 0;">📊 Quick Stats</h3>
+                <div style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-secondary);">Total Posts</span>
+                        <span style="font-weight: bold; color: var(--primary-color); font-size: 1.1rem;">2.4M</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-color);">
+                        <span style="color: var(--text-secondary);">Active Users</span>
+                        <span style="font-weight: bold; color: var(--primary-color); font-size: 1.1rem;">856K</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: var(--text-secondary);">Trending Topics</span>
+                        <span style="font-weight: bold; color: var(--primary-color); font-size: 1.1rem;">234</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filters -->
+            <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.1rem; margin: 0 0 1rem 0;">🔍 Filters</h3>
+                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" checked style="cursor: pointer;">
+                        <span>Latest Posts</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" checked style="cursor: pointer;">
+                        <span>Popular</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" style="cursor: pointer;">
+                        <span>Following</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                        <input type="checkbox" style="cursor: pointer;">
+                        <span>Photos Only</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Help & Info -->
+            <div style="background: linear-gradient(135deg, #1DA1F2 0%, #14171A 100%); border-radius: 16px; padding: 1.5rem; color: white; border: 1px solid var(--border-color);">
+                <h3 style="font-size: 1.1rem; margin: 0 0 0.75rem 0;">❓ Need Help?</h3>
+                <p style="margin: 0 0 1rem 0; font-size: 0.95rem; line-height: 1.5;">Explore our help center for guides and FAQs to make the most of Global Media.</p>
+                <button class="btn btn-primary" style="width: 100%; background: white; color: #1DA1F2; border: none;">Learn More</button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; margin-top: 2rem; color: var(--text-secondary);">
+        <p style="margin-bottom: 0.5rem; font-weight: 600;">© 2026 Global Media</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">Connecting people around the world 🌍</p>
+    </footer>
+    <script src="theme.js"></script>
+</body>
+</html>

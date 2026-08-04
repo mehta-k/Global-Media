@@ -1,0 +1,23 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="refresh" content="0;url=user-profile.html">
+    <title>Redirecting to Your Profile | Global Media</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--bg-primary); color: var(--text-primary); text-align: center; padding: 2rem;">
+        <div style="max-width: 520px;">
+            <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
+            <h1 style="margin-bottom: 0.75rem;">Redirecting to the fresh profile experience...</h1>
+            <p style="color: var(--text-secondary); line-height: 1.75; margin-bottom: 1.5rem;">The legacy profile page now points to the new blank-profile flow for every new user.</p>
+            <a href="user-profile.html" class="btn btn-primary">Go to My Profile</a>
+        </div>
+    </div>
+    <script>
+        window.location.replace('user-profile.html');
+    </script>
+</body>
+</html>

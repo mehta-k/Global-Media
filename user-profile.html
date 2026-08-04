@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Profile | Global Media</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>Global Media</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="signup.html" class="nav-link">Create Profile</a>
+                <a href="#" class="nav-link">Messages</a>
+                <a href="user-profile.html" class="nav-link active">Profile</a>
+            </div>
+            <div class="user-menu">
+                <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">🌙</button>
+                <div id="userAvatarNav" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); font-size: 1.5rem; cursor: pointer; border: 2px solid var(--primary-color);">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1200px; grid-template-columns: 1fr;">
+        <!-- Profile Header -->
+        <main style="background: var(--bg-primary); border-radius: 16px; overflow: hidden;">
+            <!-- Empty Profile State (when no profile exists) -->
+            <div id="emptyProfileState" style="display: none; padding: 3rem; text-align: center;">
+                <div style="font-size: 4rem; margin-bottom: 1.5rem;">👤</div>
+                <h2>Create Your Profile</h2>
+                <p style="color: var(--text-secondary); margin-bottom: 2rem;">Set up your profile to get started on Global Media</p>
+                <button onclick="openCreateProfileModal()" class="btn btn-primary" style="padding: 0.75rem 2rem; font-size: 1rem;">➕ Create Profile</button>
+            </div>
+
+            <!-- Existing Profile View (when profile exists) -->
+            <div id="profileView" style="display: none;">
+                <!-- Cover Photo -->
+                <div style="width: 100%; height: 200px; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); position: relative;">
+                    <button class="btn btn-primary" style="position: absolute; top: 1rem; right: 1rem;" onclick="openCreateProfileModal()">Edit Profile</button>
+                </div>
+
+                <!-- Profile Info -->
+                <div style="padding: 1.5rem; position: relative; margin-top: -70px; margin-bottom: 1.5rem;">
+                    <div style="display: flex; gap: 1.5rem; align-items: flex-start;">
+                        <div id="profileAvatarLarge" style="width: 120px; height: 120px; border-radius: 50%; border: 4px solid white; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); display: flex; align-items: center; justify-content: center; font-size: 3rem; box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);">👤</div>
+                        <div style="flex: 1;">
+                            <h1 id="profileName" style="font-size: 1.75rem; margin-bottom: 0;">Your Name</h1>
+                            <p id="profileHandle" style="color: var(--text-secondary); font-size: 1.1rem; margin-bottom: 0.75rem;">@username</p>
+                            <p id="profileBio" style="margin-bottom: 1rem; line-height: 1.6;">Your bio goes here</p>
+                            <div style="display: flex; gap: 1.5rem; color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                                <span id="profileLocation">📍 Location</span>
+                                <span id="profileWebsite">🔗 website.com</span>
+                                <span id="profileJoinDate">📅 Joined</span>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" onclick="openCreateProfileModal()">Edit Profile</button>
+                    </div>
+                </div>
+
+                <div style="padding: 0 1.5rem 2rem;">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; text-align: center; color: var(--text-secondary);">
+                        <p style="font-size: 1.2rem; margin: 0 0 0.5rem; color: var(--text-primary);">No posts yet</p>
+                        <p style="margin: 0;">Start sharing your moments! 📸</p>
+                        <a href="index.html" class="btn btn-primary" style="display: inline-block; margin-top: 1rem; text-decoration: none;">Go to Feed</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create/Edit Profile Modal -->
+    <div id="profileModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; overflow-y: auto;">
+        <div style="background: var(--bg-primary); border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); margin: 2rem auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h2 id="profileModalTitle" style="margin: 0;">Create Your Profile</h2>
+                <button onclick="closeProfileModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="profileForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                <!-- Full Name -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Full Name</label>
+                    <input type="text" id="profileFullName" placeholder="e.g., John Doe" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" required>
+                </div>
+
+                <!-- Username -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Username</label>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="color: var(--text-secondary); font-weight: 600;">@</span>
+                        <input type="text" id="profileUsername" placeholder="username" style="flex: 1; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" required>
+                    </div>
+                </div>
+
+                <!-- Bio -->
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Bio</label>
+                    <textarea id="profileBioInput" placeholder="Tell us about yourself..." style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); resize: vertical; min-height: 80px; font-family: inherit;"></textarea>
+                </div>
+
+                <!-- Location and Website Row -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Location</label>
+                        <input type="text" id="profileLocation" placeholder="e.g., San Francisco, CA" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Website</label>
+                        <input type="url" id="profileWebsiteInput" placeholder="e.g., example.com" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: var(--gradient-1); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: transform 0.2s;">Save Profile ✨</button>
+                    <button type="button" onclick="closeProfileModal()" style="flex: 1; padding: 0.75rem; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; margin-top: 2rem; color: var(--text-secondary);">
+        <p style="margin-bottom: 0.5rem; font-weight: 600;">© 2026 Global Media</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">Connecting people around the world 🌍</p>
+    </footer>
+
+    <style>
+        .tab-btn {
+            background: none;
+            border: none;
+            padding: 1rem 1.5rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+            cursor: pointer;
+            position: relative;
+            transition: color 0.2s;
+            font-size: 0.95rem;
+        }
+
+        .tab-btn:hover {
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background-color: var(--primary-color);
+            border-radius: 2px 2px 0 0;
+        }
+
+        .tab-content {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+    </style>
+
+    <script>
+        // Load profile from localStorage
+        function loadProfile() {
+            const profileData = localStorage.getItem('userProfile');
+            
+            if (!profileData) {
+                // No profile created yet, show empty state
+                document.getElementById('emptyProfileState').style.display = 'block';
+                document.getElementById('profileView').style.display = 'none';
+                return;
+            }
+
+            // Show profile view
+            document.getElementById('emptyProfileState').style.display = 'none';
+            document.getElementById('profileView').style.display = 'block';
+
+            const profile = JSON.parse(profileData);
+
+            // Update page title
+            document.title = `${profile.fullName} - Profile | Global Media`;
+
+            // Update profile info
+            document.getElementById('profileName').textContent = profile.fullName;
+            document.getElementById('profileHandle').textContent = '@' + profile.username;
+            document.getElementById('profileBio').textContent = profile.bio || 'Welcome to my profile!';
+            document.getElementById('profileLocation').textContent = profile.location ? `📍 ${profile.location}` : '📍 Location not set';
+            document.getElementById('profileWebsite').textContent = profile.website ? `🔗 ${profile.website}` : '🔗 No website';
+            document.getElementById('profileJoinDate').textContent = `📅 Joined ${profile.joinDate || new Date().getFullYear()}`;
+            
+            // Update avatar
+            const emoji = profile.emoji;
+            document.getElementById('profileAvatarLarge').textContent = emoji;
+            document.getElementById('userAvatarNav').textContent = emoji;
+        }
+
+        // Open profile creation/edit modal
+        function openCreateProfileModal() {
+            const profileData = localStorage.getItem('userProfile');
+            
+            if (profileData) {
+                // Edit mode
+                const profile = JSON.parse(profileData);
+                document.getElementById('profileModalTitle').textContent = 'Edit Your Profile';
+                document.getElementById('profileFullName').value = profile.fullName;
+                document.getElementById('profileUsername').value = profile.username;
+                document.getElementById('profileBioInput').value = profile.bio || '';
+                document.getElementById('profileLocation').value = profile.location || '';
+                document.getElementById('profileWebsiteInput').value = profile.website || '';
+            } else {
+                // Create mode
+                document.getElementById('profileModalTitle').textContent = 'Create Your Profile';
+                document.getElementById('profileForm').reset();
+            }
+            
+            document.getElementById('profileModal').style.display = 'flex';
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profileModal').style.display = 'none';
+        }
+
+        // Handle profile form submission
+        document.addEventListener('DOMContentLoaded', function() {
+            const profileForm = document.getElementById('profileForm');
+            
+            profileForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const profileData = {
+                    emoji: '👤',
+                    fullName: document.getElementById('profileFullName').value,
+                    username: document.getElementById('profileUsername').value,
+                    bio: document.getElementById('profileBioInput').value,
+                    location: document.getElementById('profileLocation').value,
+                    website: document.getElementById('profileWebsiteInput').value,
+                    followers: 0,
+                    following: 0,
+                    posts: 0,
+                    joinDate: new Date().getFullYear()
+                };
+
+                // Save to localStorage
+                localStorage.setItem('userProfile', JSON.stringify(profileData));
+
+                // Show success message
+                alert('✨ Profile saved successfully!');
+
+                // Close modal and reload profile
+                closeProfileModal();
+                loadProfile();
+            });
+
+            // Close modal when clicking outside
+            const modal = document.getElementById('profileModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeProfileModal();
+                }
+            });
+
+            // Load profile on page load
+            loadProfile();
+        });
+
+        function switchTab(event, tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.style.display = 'none');
+
+            // Remove active class from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').style.display = 'block';
+            event.target.classList.add('active');
+        }
+
+    </script>
+    <script src="theme.js"></script>
+</body>
+</html>

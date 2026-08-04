@@ -1,0 +1,879 @@
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reels | Global Media</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .reels-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            height: 100vh;
+            overflow: hidden;
+            padding: 0;
+            align-items: stretch;
+            justify-content: center;
+        }
+
+        .upload-reel-card {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+        }
+
+        .upload-reel-card h2 {
+            margin: 0 0 0.75rem 0;
+            font-size: 1.25rem;
+        }
+
+        .upload-reel-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .upload-reel-form .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .upload-reel-form label {
+            display: block;
+            margin-bottom: 0.45rem;
+            font-weight: 600;
+        }
+
+        .upload-reel-form input,
+        .upload-reel-form textarea {
+            width: 100%;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            border-radius: 10px;
+            padding: 0.8rem 0.9rem;
+            color: var(--text-primary);
+        }
+
+        .upload-reel-form textarea {
+            min-height: 90px;
+            resize: vertical;
+        }
+
+        .upload-reel-form .upload-input {
+            border: 2px dashed var(--primary-color);
+            padding: 1rem;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .reel-viewer {
+            width: 100%;
+            height: 100vh;
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.05) 0%, rgba(131, 56, 236, 0.05) 100%);
+            border-radius: 0;
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 0 1px var(--border-color);
+        }
+
+        .reel-content {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6rem;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow);
+        }
+
+        .reel-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.8) 100%);
+            padding: 2rem 1.5rem 1.5rem;
+            color: white;
+            z-index: 10;
+        }
+
+        .reel-info {
+            display: flex;
+            gap: 1rem;
+            align-items: flex-end;
+            margin-bottom: 1rem;
+        }
+
+        .reel-creator {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .reel-creator:hover {
+            transform: scale(1.1);
+        }
+
+        .reel-details h3 {
+            margin: 0 0 0.25rem 0;
+            font-size: 1.1rem;
+        }
+
+        .reel-details p {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .reel-description {
+            margin: 0.75rem 0;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .reel-music {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.85rem;
+            margin-top: 0.75rem;
+            opacity: 0.9;
+        }
+
+        .reel-actions {
+            position: absolute;
+            right: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            z-index: 20;
+        }
+
+        .reel-action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid white;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .reel-action-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+        .reel-count {
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+            text-align: center;
+        }
+
+        /* Hide the sidebar for a simple full-screen reels experience */
+        .reel-sidebar {
+            display: none;
+        }
+
+        /* Make overlay slightly more compact on mobile/fullscreen */
+        .reel-overlay {
+            padding: 1rem 1rem 1.25rem;
+        }
+
+        @media (min-width: 1025px) {
+            /* On wide screens keep actions visible but viewer remains full-height */
+            .reel-actions { right: 1.25rem; }
+        }
+
+        .mobile-upload-fab {
+            display: none;
+            position: fixed;
+            right: 1rem;
+            bottom: 1rem;
+            width: 58px;
+            height: 58px;
+            border: none;
+            border-radius: 50%;
+            background: var(--gradient-1);
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(255, 0, 110, 0.4);
+            z-index: 999;
+        }
+
+        .reel-list-item {
+            padding: 1rem;
+            background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%);
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .reel-list-item:hover {
+            border-color: var(--primary-color);
+            transform: translateX(5px);
+        }
+
+        .reel-list-item.active {
+            background: var(--gradient-1);
+            color: white;
+        }
+
+        .reel-list-item h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.95rem;
+        }
+
+        .reel-list-item p {
+            margin: 0;
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        .play-pause-btn {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            border: 3px solid white;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            z-index: 15;
+            opacity: 0;
+        }
+
+        .reel-content:hover .play-pause-btn {
+            opacity: 1;
+        }
+
+        .play-pause-btn:hover {
+            background: rgba(255, 255, 255, 0.5);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+
+        .reel-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: rgba(255, 255, 255, 0.2);
+            z-index: 5;
+        }
+
+        .reel-progress-bar {
+            height: 100%;
+            background: var(--gradient-1);
+            width: 30%;
+            transition: width 0.1s linear;
+        }
+
+        @media (max-width: 1024px) {
+            .reels-container {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .upload-reel-form {
+                grid-template-columns: 1fr;
+            }
+
+            .reel-sidebar {
+                width: 100%;
+                max-height: 200px;
+                display: flex;
+                overflow-x: auto;
+                gap: 0.5rem;
+                padding: 0.75rem;
+            }
+
+            .reel-list-item {
+                min-width: 120px;
+                margin-bottom: 0;
+            }
+
+            .reel-viewer {
+                min-height: 500px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .mobile-upload-fab {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .upload-reel-card {
+                display: none;
+            }
+
+            .reel-sidebar {
+                display: none;
+            }
+
+            .reels-container {
+                height: calc(100dvh - 72px);
+                padding: 0;
+            }
+
+            .reel-viewer {
+                width: 100%;
+                max-width: 430px;
+                height: calc(100dvh - 72px);
+                margin: 0 auto;
+                border-radius: 20px;
+                box-shadow: 0 10px 35px rgba(0, 0, 0, 0.18);
+            }
+
+            .reel-content {
+                font-size: 4.5rem;
+            }
+
+            .reel-overlay {
+                padding: 0.9rem 0.9rem 1rem;
+            }
+
+            .reel-actions {
+                right: 0.5rem;
+                gap: 1rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .upload-reel-card {
+                padding: 1rem;
+            }
+
+            .reel-overlay {
+                padding: 0.9rem 0.9rem 1rem;
+            }
+
+            .reel-actions {
+                right: 0.5rem;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo">
+                <h1>Global Media</h1>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">Home</a>
+                <a href="reels.html" class="nav-link active">Reels</a>
+                <a href="messages.html" class="nav-link">Messages</a>
+                <a href="user-profile.html" class="nav-link">Profile</a>
+            </div>
+            <div class="user-menu">
+                <button class="dark-mode-toggle" id="darkModeToggle" title="Toggle dark mode">🌙</button>
+                <div id="userAvatarNav" style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); font-size: 1.5rem; cursor: pointer; border: 2px solid var(--primary-color);">👤</div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container" style="max-width: 1600px; grid-template-columns: 1fr;">
+        <main class="feed" style="background: transparent; border: none; padding: 0;">
+            <section class="upload-reel-card">
+                <h2>Upload Your Reel</h2>
+                <form id="singleUploadForm" class="upload-reel-form">
+                    <div class="full-width">
+                        <label for="reelVideoInput">Choose your video</label>
+                        <input id="reelVideoInput" class="upload-input" type="file" accept="video/*" required>
+                    </div>
+                    <div>
+                        <label for="reelUserName">Your name</label>
+                        <input id="reelUserName" type="text" placeholder="@username" required>
+                    </div>
+                    <div>
+                        <label for="reelFollowersInput">Followers</label>
+                        <input id="reelFollowersInput" type="text" placeholder="e.g. 10K" required>
+                    </div>
+                    <div class="full-width">
+                        <label for="reelCaptionInput">Caption</label>
+                        <textarea id="reelCaptionInput" placeholder="Share your reel story and add hashtags" required></textarea>
+                    </div>
+                    <div>
+                        <label for="reelMusicInput">Audio</label>
+                        <input id="reelMusicInput" type="text" placeholder="e.g. Chill Beats" required>
+                    </div>
+                    <div>
+                        <label for="reelEstimateInput">Estimated likes</label>
+                        <input id="reelEstimateInput" type="number" value="0" required>
+                    </div>
+                    <div class="full-width" style="display:flex; gap:0.75rem; justify-content:flex-end;">
+                        <button type="submit" class="btn btn-primary" style="min-width: 160px;">Publish Reel</button>
+                    </div>
+                </form>
+            </section>
+
+            <div class="reels-container">
+                <!-- Reel Viewer -->
+                <div class="reel-viewer">
+                    <div class="reel-content" id="reelContent">
+                        🎬
+                        <button class="play-pause-btn" onclick="togglePlayPause()">▶️</button>
+                        <div class="reel-progress">
+                            <div class="reel-progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="reel-overlay">
+                        <div class="reel-info">
+                            <div class="reel-creator">👤</div>
+                            <div class="reel-details">
+                                <h3 id="reelCreator">@creator</h3>
+                                <p id="reelFollowers">234K followers</p>
+                            </div>
+                        </div>
+                        <p class="reel-description" id="reelDescription">Check out this amazing reel! 🔥</p>
+                        <div class="reel-music">
+                            <span>🎵</span>
+                            <span id="reelMusic">Trending Audio Track</span>
+                        </div>
+                    </div>
+                    <div class="reel-actions">
+                        <div>
+                            <button class="reel-action-btn" onclick="likeReel(this)">❤️</button>
+                            <div class="reel-count" id="likeCount">0</div>
+                        </div>
+                        <div>
+                            <button class="reel-action-btn" onclick="commentReel()">💬</button>
+                            <div class="reel-count" id="commentCount">0</div>
+                        </div>
+                        <div>
+                            <button class="reel-action-btn" onclick="shareReel()">📤</button>
+                        </div>
+                        <div>
+                            <button class="reel-action-btn" onclick="saveReel(this)">🔖</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reels Sidebar -->
+                <div class="reel-sidebar">
+                    <h3 style="margin-top: 0; color: var(--primary-color);">🎬 Popular Reels</h3>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-bottom: 1rem;">
+                        <button onclick="openCreateReelModal()" style="padding: 0.75rem; background: var(--gradient-1); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: transform 0.2s;">➕ Create</button>
+                        <button onclick="showQuickTemplates()" style="padding: 0.75rem; background: rgba(131, 56, 236, 0.5); color: white; border: 2px solid #8338EC; border-radius: 8px; cursor: pointer; font-weight: 600; transition: transform 0.2s;">⚡ Templates</button>
+                    </div>
+                    
+                    <div id="trendingAudio" style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%); padding: 0.75rem; border-radius: 8px; margin-bottom: 1rem; border-left: 3px solid #FF006E;">
+                        <p style="margin: 0 0 0.5rem 0; font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">🎵 Trending Now</p>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);" id="trendingList">
+                            <p style="margin: 0.25rem 0; cursor: pointer; padding: 0.25rem; border-radius: 4px; transition: 0.2s;">🔥 Feel Good Vibes</p>
+                            <p style="margin: 0.25rem 0; cursor: pointer; padding: 0.25rem; border-radius: 4px; transition: 0.2s;">💃 Dance Moves</p>
+                            <p style="margin: 0.25rem 0; cursor: pointer; padding: 0.25rem; border-radius: 4px; transition: 0.2s;">🎧 Chill Beats</p>
+                        </div>
+                    </div>
+                    
+                    <div id="reelsList"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create Reel Modal -->
+    <div id="reelModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 1000; display: flex; align-items: center; justify-content: center; overflow-y: auto;">
+        <div style="background: var(--bg-primary); border-radius: 16px; padding: 2rem; max-width: 600px; width: 90%; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3); margin: 2rem auto;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <h2 style="margin: 0;">Upload Your Reel 🎬</h2>
+                <button onclick="closeCreateReelModal()" style="background: none; border: none; font-size: 1.5rem; cursor: pointer;">✕</button>
+            </div>
+
+            <form id="reelForm" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Choose your video</label>
+                    <input type="file" id="reelVideo" accept="video/*" required style="width: 100%; padding: 0.75rem; border: 2px dashed var(--primary-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Your Username</label>
+                        <input type="text" id="reelCreator" placeholder="@username" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" required>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Followers</label>
+                        <input type="text" id="reelFollowers" placeholder="e.g., 100K" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" required>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Caption</label>
+                    <textarea id="reelDescription" placeholder="What's your reel about? Add hashtags with #" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary); resize: vertical; min-height: 90px; font-family: inherit;" maxlength="150" required></textarea>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Music/Audio</label>
+                        <input type="text" id="reelMusic" placeholder="e.g., Chill Beats" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" required>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 0.5rem; font-weight: 600;">Estimated Likes</label>
+                        <input type="number" id="reelLikes" placeholder="e.g., 1000" style="width: 100%; padding: 0.75rem; border: 1px solid var(--border-color); border-radius: 8px; background: var(--bg-secondary); color: var(--text-primary);" value="0" required>
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 1rem;">
+                    <button type="submit" style="flex: 1; padding: 0.75rem; background: var(--gradient-1); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: transform 0.2s;">Publish Reel ✨</button>
+                    <button type="button" onclick="closeCreateReelModal()" style="flex: 1; padding: 0.75rem; background: var(--bg-secondary); color: var(--text-primary); border: 1px solid var(--border-color); border-radius: 8px; cursor: pointer; font-weight: 600;">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <button class="mobile-upload-fab" onclick="openCreateReelModal()" title="Upload reel">＋</button>
+
+    <footer style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; margin-top: 2rem; color: var(--text-secondary);">
+        <p style="margin-bottom: 0.5rem; font-weight: 600;">© 2026 Global Media</p>
+        <p style="margin-top: 0.5rem; font-size: 0.85rem;">Connecting people around the world 🌍</p>
+    </footer>
+
+    <script>
+        // Modal functions
+        function openCreateReelModal() {
+            document.getElementById('reelModal').style.display = 'flex';
+        }
+
+        function closeCreateReelModal() {
+            document.getElementById('reelModal').style.display = 'none';
+            document.getElementById('reelForm').reset();
+        }
+
+        // Close modal when clicking outside
+        document.addEventListener('DOMContentLoaded', function() {
+            const modal = document.getElementById('reelModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeCreateReelModal();
+                }
+            });
+
+            // Handle form submission
+            document.getElementById('reelForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const videoInput = document.getElementById('reelVideo');
+                const file = videoInput.files && videoInput.files[0];
+
+                if (!file) {
+                    alert('Please choose a video file first.');
+                    return;
+                }
+
+                const newReel = {
+                    emoji: '🎬',
+                    creator: document.getElementById('reelCreator').value,
+                    followers: document.getElementById('reelFollowers').value,
+                    description: document.getElementById('reelDescription').value,
+                    music: document.getElementById('reelMusic').value,
+                    likes: parseInt(document.getElementById('reelLikes').value) || 0,
+                    comments: 0,
+                    videoUrl: URL.createObjectURL(file)
+                };
+
+                reels.unshift(newReel);
+                localStorage.setItem('userReels', JSON.stringify(reels));
+                renderReelsList();
+                loadReel(0);
+                alert('✨ Reel posted successfully! Your reel is now at the top.');
+                closeCreateReelModal();
+            });
+
+            // Handle the simple upload form on the page too
+            document.getElementById('singleUploadForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const file = document.getElementById('reelVideoInput').files && document.getElementById('reelVideoInput').files[0];
+                if (!file) {
+                    alert('Please choose a video file first.');
+                    return;
+                }
+
+                const newReel = {
+                    emoji: '🎬',
+                    creator: document.getElementById('reelUserName').value,
+                    followers: document.getElementById('reelFollowersInput').value,
+                    description: document.getElementById('reelCaptionInput').value,
+                    music: document.getElementById('reelMusicInput').value,
+                    likes: parseInt(document.getElementById('reelEstimateInput').value) || 0,
+                    comments: 0,
+                    videoUrl: URL.createObjectURL(file)
+                };
+
+                reels.unshift(newReel);
+                localStorage.setItem('userReels', JSON.stringify(reels));
+                renderReelsList();
+                loadReel(0);
+                alert('✨ Your reel is live now.');
+                this.reset();
+            });
+
+            // Trending audio click handlers
+            document.querySelectorAll('#trendingList p').forEach(item => {
+                item.addEventListener('click', function() {
+                    const music = this.textContent.substring(2).trim();
+                    setMusic(music);
+                });
+                item.addEventListener('mouseover', function() {
+                    this.style.background = 'var(--hover-bg)';
+                });
+                item.addEventListener('mouseout', function() {
+                    this.style.background = 'transparent';
+                });
+            });
+
+            // Load saved reels from localStorage
+            const savedReels = localStorage.getItem('userReels');
+            if (savedReels) {
+                reels.length = 0;
+                reels.push(...JSON.parse(savedReels));
+            }
+        });
+
+        const reels = [];
+
+        let currentReel = 0;
+        let isPlaying = true;
+        let progressInterval;
+
+        function loadReel(index) {
+            if (!reels || reels.length === 0) {
+                document.getElementById('reelContent').innerHTML = `
+                    <div style="text-align: center; color: white;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🎬</div>
+                        <h2>No Reels Yet</h2>
+                        <p style="font-size: 1.1rem; opacity: 0.9;">Create your first reel to get started!</p>
+                        <button onclick="openCreateReelModal()" style="margin-top: 1rem; padding: 0.75rem 1.5rem; background: var(--gradient-1); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 1rem;">➕ Create Reel</button>
+                    </div>
+                `;
+                document.getElementById('reelCreator').textContent = 'Your Reels';
+                document.getElementById('reelFollowers').textContent = 'Start creating!';
+                document.getElementById('reelDescription').textContent = 'Create your first reel to share content with the world';
+                document.getElementById('reelMusic').textContent = 'Choose your music';
+                document.getElementById('likeCount').textContent = '0';
+                document.getElementById('commentCount').textContent = '0';
+                return;
+            }
+
+            const reel = reels[index];
+            const mediaMarkup = reel.videoUrl
+                ? `<video src="${reel.videoUrl}" style="width:100%;height:100%;object-fit:cover; background:#000;" muted loop playsinline autoplay></video>`
+                : `${reel.emoji}`;
+
+            document.getElementById('reelContent').innerHTML = `
+                ${mediaMarkup}
+                <button class="play-pause-btn" onclick="togglePlayPause()">▶️</button>
+                <div class="reel-progress">
+                    <div class="reel-progress-bar"></div>
+                </div>
+            `;
+            document.getElementById('reelCreator').textContent = reel.creator;
+            document.getElementById('reelFollowers').textContent = reel.followers + ' followers';
+            document.getElementById('reelDescription').textContent = reel.description;
+            document.getElementById('reelMusic').textContent = reel.music;
+            document.getElementById('likeCount').textContent = reel.likes.toLocaleString();
+            document.getElementById('commentCount').textContent = reel.comments.toLocaleString();
+
+            // Update sidebar highlight
+            document.querySelectorAll('.reel-list-item').forEach((item, i) => {
+                item.classList.toggle('active', i === index);
+            });
+
+            // Reset progress
+            document.querySelector('.reel-progress-bar').style.width = '0%';
+            startProgress();
+        }
+
+        function renderReelsList() {
+            const reelsList = document.getElementById('reelsList');
+            if (!reels || reels.length === 0) {
+                reelsList.innerHTML = `<div style="text-align: center; padding: 2rem; color: var(--text-secondary);">
+                    <div style="font-size: 2rem; margin-bottom: 1rem;">✨</div>
+                    <p style="margin: 0.5rem 0; font-weight: 600;">No reels yet</p>
+                    <p style="font-size: 0.85rem; margin: 0;">Click Create to add your first reel!</p>
+                </div>`;
+            } else {
+                reelsList.innerHTML = reels.map((reel, index) => `
+                    <div class="reel-list-item ${index === 0 ? 'active' : ''}" onclick="switchReel(${index})">
+                        <h4>${reel.emoji} ${reel.creator}</h4>
+                        <p>${reel.description.substring(0, 40)}...</p>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function switchReel(index) {
+            currentReel = index;
+            loadReel(index);
+        }
+
+        function startProgress() {
+            clearInterval(progressInterval);
+            let progress = 0;
+            progressInterval = setInterval(() => {
+                if (isPlaying) {
+                    progress += 2;
+                    document.querySelector('.reel-progress-bar').style.width = progress + '%';
+                    if (progress >= 100) {
+                        nextReel();
+                    }
+                }
+            }, 100);
+        }
+
+        function nextReel() {
+            if (!reels || reels.length === 0) return;
+            currentReel = (currentReel + 1) % reels.length;
+            loadReel(currentReel);
+        }
+
+        function previousReel() {
+            if (!reels || reels.length === 0) return;
+            currentReel = (currentReel - 1 + reels.length) % reels.length;
+            loadReel(currentReel);
+        }
+
+        function togglePlayPause() {
+            isPlaying = !isPlaying;
+            const playButton = document.querySelector('.play-pause-btn');
+            if (playButton) {
+                playButton.textContent = isPlaying ? '⏸️' : '▶️';
+            }
+        }
+
+        function likeReel(btn) {
+            btn.style.animation = 'pulse 0.6s ease';
+            const count = document.getElementById('likeCount');
+            count.textContent = (parseInt(count.textContent) + 1).toLocaleString();
+        }
+
+        function commentReel() {
+            alert('Comments coming soon! 💬');
+        }
+
+        function shareReel() {
+            alert('Share this reel! 📤');
+        }
+
+        function saveReel(btn) {
+            btn.textContent = btn.textContent === '🔖' ? '✅' : '🔖';
+            alert(btn.textContent === '✅' ? 'Reel saved! 📌' : 'Reel unsaved');
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'j') nextReel();
+            if (e.key === 'ArrowUp' || e.key === 'k') previousReel();
+            if (e.key === ' ') { e.preventDefault(); togglePlayPause(); }
+        });
+
+        document.addEventListener('click', function (e) {
+            const target = e.target;
+            if (target.classList.contains('reel-content')) {
+                nextReel();
+            }
+        });
+
+        // Touch / tap support for mobile-like experience
+        (function addTouchHandlers() {
+            const viewer = document.querySelector('.reel-viewer');
+            let startY = 0;
+            let startX = 0;
+            let isMoving = false;
+
+            viewer.addEventListener('touchstart', (e) => {
+                if (e.touches && e.touches.length === 1) {
+                    startY = e.touches[0].clientY;
+                    startX = e.touches[0].clientX;
+                    isMoving = true;
+                }
+            }, { passive: true });
+
+            viewer.addEventListener('touchmove', (e) => {
+                if (!isMoving) return;
+                // could add small visual feedback here
+            }, { passive: true });
+
+            viewer.addEventListener('touchend', (e) => {
+                if (!isMoving) return;
+                const endY = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientY : startY;
+                const endX = (e.changedTouches && e.changedTouches[0]) ? e.changedTouches[0].clientX : startX;
+                const dy = endY - startY;
+                const dx = endX - startX;
+                const absY = Math.abs(dy);
+                const absX = Math.abs(dx);
+                // Vertical swipe threshold
+                if (absY > 50 && absY > absX) {
+                    if (dy < 0) nextReel(); // swipe up -> next
+                    else previousReel(); // swipe down -> prev
+                } else {
+                    // treat as tap: if tap on left half -> prev, right half -> next
+                    const vw = window.innerWidth;
+                    const tapX = endX;
+                    if (tapX < vw * 0.4) previousReel();
+                    else nextReel();
+                }
+                isMoving = false;
+            });
+        })();
+
+        // Add pulse animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.2); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Initialize
+        renderReelsList();
+        loadReel(0);
+    </script>
+    <script src="theme.js"></script>
+</body>
+</html>
