@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -106,6 +106,103 @@
             font-size: 0.9rem;
             min-height: 1.2rem;
         }
+
+        .social-login {
+            display: grid;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .social-btn {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .social-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin: 1rem 0 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.85rem;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .forgot-link {
+            text-align: right;
+            margin-top: 0.5rem;
+        }
+
+        .forgot-link button {
+            border: none;
+            background: transparent;
+            color: var(--primary-color);
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .recovery-modal {
+            position: fixed;
+            inset: 0;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0, 0, 0, 0.55);
+            padding: 1rem;
+            z-index: 1000;
+        }
+
+        .recovery-card {
+            width: min(420px, 100%);
+            background: var(--bg-primary);
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .recovery-card h2 {
+            margin-bottom: 0.5rem;
+        }
+
+        .recovery-card input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 12px;
+            border: 2px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            margin-top: 0.5rem;
+        }
+
+        .recovery-card button {
+            margin-top: 1rem;
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: none;
+            border-radius: 12px;
+            background: var(--gradient-1);
+            color: white;
+            font-weight: 700;
+            cursor: pointer;
+        }
     </style>
 
     <div id="authGate" class="auth-gate" style="display: flex;">
@@ -115,12 +212,38 @@
             <form id="loginForm" class="auth-form">
                 <input type="text" id="loginUsername" placeholder="Username" required>
                 <input type="password" id="loginPassword" placeholder="Password" required>
+                <div class="forgot-link">
+                    <button type="button" id="forgotPasswordBtn">Forgot password?</button>
+                </div>
                 <div id="loginError" class="login-error"></div>
                 <button type="submit">Login</button>
             </form>
+
+            <div class="divider">or continue with</div>
+            <div class="social-login">
+                <button type="button" class="social-btn" data-social="google">🔵 Continue with Google</button>
+                <button type="button" class="social-btn" data-social="github">🐙 Continue with GitHub</button>
+                <button type="button" class="social-btn" data-social="demo">✨ Continue as Demo User</button>
+            </div>
+
             <div class="auth-note">
                 New here? <a href="signup.html">Register account</a>
             </div>
+        </div>
+    </div>
+
+    <div id="recoveryModal" class="recovery-modal">
+        <div class="recovery-card">
+            <h2>Account Recovery</h2>
+            <p style="color: var(--text-secondary); margin-bottom: 1rem;">Use your username to reset your password locally.</p>
+            <label for="recoveryUsername">Username</label>
+            <input type="text" id="recoveryUsername" placeholder="Enter your username">
+            <label for="recoveryPassword" style="display:block; margin-top: 1rem;">New Password</label>
+            <input type="password" id="recoveryPassword" placeholder="Enter a new password">
+            <label for="recoveryConfirmPassword" style="display:block; margin-top: 1rem;">Confirm Password</label>
+            <input type="password" id="recoveryConfirmPassword" placeholder="Confirm the new password">
+            <div id="recoveryMessage" class="login-error" style="margin-top: 0.75rem;"></div>
+            <button type="button" id="recoverPasswordBtn">Reset Password</button>
         </div>
     </div>
 
@@ -208,6 +331,10 @@
         const loginForm = document.getElementById('loginForm');
         const loginError = document.getElementById('loginError');
         const logoutBtn = document.getElementById('logoutBtn');
+        const recoveryModal = document.getElementById('recoveryModal');
+        const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+        const recoverPasswordBtn = document.getElementById('recoverPasswordBtn');
+        const recoveryMessage = document.getElementById('recoveryMessage');
 
         function showApp() {
             authGate.style.display = 'none';
@@ -227,6 +354,24 @@
             }
         }
 
+        function ensureProfile(username, fullName) {
+            const profile = JSON.parse(localStorage.getItem('userProfile') || 'null');
+            if (profile) return;
+
+            localStorage.setItem('userProfile', JSON.stringify({
+                fullName: fullName || username,
+                username: username,
+                emoji: '👤',
+                bio: '',
+                location: '',
+                website: '',
+                joinDate: 'March 2026',
+                followers: 0,
+                following: 0,
+                posts: 0
+            }));
+        }
+
         function checkSession() {
             const currentUser = localStorage.getItem('loggedInUser');
             if (currentUser) {
@@ -236,21 +381,100 @@
             }
         }
 
-        loginForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const username = document.getElementById('loginUsername').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
+        function loginUser(username, password, source = 'local') {
             const users = getRegisteredUsers();
             const found = users.find(user => user.username === username && user.password === password);
 
             if (!found) {
-                loginError.textContent = 'Invalid username or password.';
-                return;
+                loginError.textContent = source === 'social'
+                    ? 'This social demo account is not available yet. Please register once.'
+                    : 'Invalid username or password.';
+                return false;
             }
 
             localStorage.setItem('loggedInUser', found.username);
             loginError.textContent = '';
             checkSession();
+            return true;
+        }
+
+        function createSocialUser(provider) {
+            const providerMap = {
+                google: { username: 'google_demo', password: 'google@123', fullName: 'Google Demo User' },
+                github: { username: 'github_demo', password: 'github@123', fullName: 'GitHub Demo User' },
+                demo: { username: 'demo_user', password: 'demo@123', fullName: 'Demo User' }
+            };
+
+            const socialUser = providerMap[provider];
+            if (!socialUser) return;
+
+            const users = getRegisteredUsers();
+            let existingUser = users.find(user => user.username === socialUser.username);
+
+            if (!existingUser) {
+                users.push({ username: socialUser.username, password: socialUser.password, fullName: socialUser.fullName });
+                localStorage.setItem('registeredUsers', JSON.stringify(users));
+            }
+
+            ensureProfile(socialUser.username, socialUser.fullName);
+            localStorage.setItem('loggedInUser', socialUser.username);
+            loginError.textContent = '';
+            checkSession();
+        }
+
+        document.querySelectorAll('[data-social]').forEach(button => {
+            button.addEventListener('click', () => createSocialUser(button.dataset.social));
+        });
+
+        forgotPasswordBtn.addEventListener('click', () => {
+            recoveryModal.style.display = 'flex';
+            recoveryMessage.textContent = '';
+        });
+
+        recoveryModal.addEventListener('click', (event) => {
+            if (event.target === recoveryModal) {
+                recoveryModal.style.display = 'none';
+            }
+        });
+
+        recoverPasswordBtn.addEventListener('click', () => {
+            const username = document.getElementById('recoveryUsername').value.trim();
+            const password = document.getElementById('recoveryPassword').value.trim();
+            const confirmPassword = document.getElementById('recoveryConfirmPassword').value.trim();
+            const users = getRegisteredUsers();
+
+            if (!username || !password || !confirmPassword) {
+                recoveryMessage.textContent = 'Please fill all recovery fields.';
+                return;
+            }
+
+            if (password.length < 4) {
+                recoveryMessage.textContent = 'Password must be at least 4 characters long.';
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                recoveryMessage.textContent = 'Passwords do not match.';
+                return;
+            }
+
+            const userIndex = users.findIndex(user => user.username === username);
+            if (userIndex === -1) {
+                recoveryMessage.textContent = 'No matching account was found for this username.';
+                return;
+            }
+
+            users[userIndex].password = password;
+            localStorage.setItem('registeredUsers', JSON.stringify(users));
+            recoveryMessage.textContent = 'Password reset successful. You can now log in with your new password.';
+            recoveryMessage.style.color = '#06D6A0';
+        });
+
+        loginForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const username = document.getElementById('loginUsername').value.trim();
+            const password = document.getElementById('loginPassword').value.trim();
+            loginUser(username, password);
         });
 
         logoutBtn.addEventListener('click', function () {

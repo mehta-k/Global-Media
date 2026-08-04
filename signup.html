@@ -1,4 +1,4 @@
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -220,6 +220,11 @@
 
                 <button type="submit" class="submit-btn">Create Account ✨</button>
             </form>
+
+            <div style="display: grid; gap: 0.75rem; margin-top: 1.25rem;">
+                <button type="button" class="submit-btn" style="margin-top: 0; background: #FFFFFF; color: #1DA1F2; border: 1px solid var(--border-color); box-shadow: none;" onclick="localStorage.setItem('loggedInUser', 'google_demo'); window.location.href='index.html';">🔵 Continue with Google</button>
+                <button type="button" class="submit-btn" style="margin-top: 0; background: #111827; color: white; border: 1px solid var(--border-color); box-shadow: none;" onclick="localStorage.setItem('loggedInUser', 'github_demo'); window.location.href='index.html';">🐙 Continue with GitHub</button>
+            </div>
 
             <div class="back-link">
                 <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">Already have a profile? 
