@@ -6,29 +6,29 @@
 }
 
 :root {
-    --primary-color: #0D47A1;
-    --secondary-color: #90CAF9;
-    --accent-color: #2196F3;
-    --success-color: #E3F2FD;
+    --primary-color: #321E48;
+    --secondary-color: #484363;
+    --accent-color: #65DCD5;
+    --success-color: #D9FFF4;
     --bg-primary: #FFFFFF;
-    --bg-secondary: #F7FBFF;
-    --border-color: #D7EAFB;
-    --text-primary: #0D47A1;
-    --text-secondary: #1565C0;
-    --hover-bg: #E3F2FD;
-    --shadow: 0 1px 3px rgba(13, 71, 161, 0.12), 0 1px 2px rgba(13, 71, 161, 0.24);
-    --gradient-1: linear-gradient(135deg, #0D47A1 0%, #2196F3 100%);
-    --gradient-2: linear-gradient(135deg, #90CAF9 0%, #E3F2FD 100%);
-    --gradient-3: linear-gradient(135deg, #0D47A1 0%, #90CAF9 100%);
+    --bg-secondary: #F7F9FA;
+    --border-color: #E1E8ED;
+    --text-primary: #321E48;
+    --text-secondary: #484363;
+    --hover-bg: #F7F9FA;
+    --shadow: 0 1px 3px rgba(50, 30, 72, 0.12), 0 1px 2px rgba(50, 30, 72, 0.24);
+    --gradient-1: linear-gradient(135deg, #321E48 0%, #484363 100%);
+    --gradient-2: linear-gradient(135deg, #484363 0%, #65DCD5 100%);
+    --gradient-3: linear-gradient(135deg, #65DCD5 0%, #D9FFF4 100%);
 }
 
 body.dark-mode {
-    --bg-primary: #0A234A;
-    --bg-secondary: #102D5E;
-    --border-color: #90CAF9;
-    --text-primary: #E3F2FD;
-    --text-secondary: #B4DBFF;
-    --hover-bg: #1B4F9A;
+    --bg-primary: #1B1530;
+    --bg-secondary: #2A2142;
+    --border-color: #484363;
+    --text-primary: #D9FFF4;
+    --text-secondary: #B3F1E8;
+    --hover-bg: #484363;
 }
 
 body {
