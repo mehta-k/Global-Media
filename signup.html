@@ -11,7 +11,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: linear-gradient(135deg, #FF006E 0%, #8338EC 50%, #3A86FF 100%);
+            background: var(--gradient-1);
             padding: 1rem;
         }
 
@@ -70,7 +70,7 @@
         .form-group textarea:focus {
             outline: none;
             border-color: var(--primary-color);
-            box-shadow: 0 0 15px rgba(255, 0, 110, 0.3);
+            box-shadow: 0 0 15px rgba(255, 0, 0, 0.18);
             background: var(--bg-primary);
         }
 
@@ -95,7 +95,7 @@
             align-items: center;
             justify-content: center;
             font-size: 2.5rem;
-            box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.18);
         }
 
         .submit-btn {
@@ -109,13 +109,13 @@
             font-weight: 700;
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(255, 0, 110, 0.3);
+            box-shadow: 0 4px 15px rgba(255, 0, 0, 0.18);
             margin-top: 1rem;
         }
 
         .submit-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(255, 0, 110, 0.5);
+            box-shadow: 0 8px 25px rgba(255, 0, 0, 0.25);
         }
 
         .submit-btn:active {
