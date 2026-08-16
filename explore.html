@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+~opencode<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Explore | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -28,11 +29,14 @@
     </nav>
 
     <div class="container" style="max-width: 1200px; grid-template-columns: 1fr;">
-        <main style="flex: 3;">
-            <!-- Search Bar -->
-            <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
-                <input type="text" placeholder="🔍 Search posts, people, topics..." style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 24px; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem;">
-            </div>
+            <main style="flex: 3;">
+                <!-- Search Bar -->
+                <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
+                    <input type="text" id="exploreSearch" placeholder="🔍 Search posts, people, topics..." style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 24px; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem;">
+                </div>
+
+                <!-- Live Results -->
+                <div id="exploreResults"></div>
 
             <!-- Featured Posts/Articles -->
             <div style="margin-bottom: 2rem;">
@@ -275,6 +279,7 @@
     <footer style="background: linear-gradient(135deg, rgba(255, 0, 110, 0.1) 0%, rgba(131, 56, 236, 0.1) 100%); border-top: 1px solid var(--border-color); padding: 2rem; text-align: center; margin-top: 2rem; color: var(--text-secondary);">
         <p style="margin-bottom: 0.5rem; font-weight: 600;">© 2026 Global Media</p>
     </footer>
+    <script src="explore-api.js"></script>
     <script src="theme.js"></script>
 </body>
 </html>

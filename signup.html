@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Your Profile | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
     <style>
         .signup-container {
             min-height: 100vh;
@@ -244,51 +245,15 @@
         const googleSocialBtn = document.getElementById('googleSocialBtn');
         const githubSocialBtn = document.getElementById('githubSocialBtn');
 
-        function createSocialAccount(provider) {
-            const providerMap = {
-                google: { label: 'Google', prefix: 'google' },
-                github: { label: 'GitHub', prefix: 'github' }
-            };
+        googleSocialBtn.addEventListener('click', () => alert('Social sign-up is not available in this demo. Please use the form.'));
+        githubSocialBtn.addEventListener('click', () => alert('Social sign-up is not available in this demo. Please use the form.'));
 
-            const chosenProvider = providerMap[provider];
-            if (!chosenProvider) return;
-
-            const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-            const username = `${chosenProvider.prefix}_${uniqueSuffix}`;
-            const password = `${chosenProvider.prefix}@${uniqueSuffix}`;
-            const fullName = `${chosenProvider.label} User ${Math.floor(Math.random() * 9900 + 100)}`;
-            const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
-
-            const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-            existingUsers.push({ username, password, fullName, mobile });
-            localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-            localStorage.setItem('userProfile', JSON.stringify({
-                fullName,
-                username,
-                emoji: '👤',
-                bio: '',
-                location: '',
-                website: '',
-                joinDate: 'March 2026',
-                followers: 0,
-                following: 0,
-                posts: 0
-            }));
-            localStorage.setItem('loggedInUser', username);
-            window.location.href = 'index.html';
-        }
-
-        googleSocialBtn.addEventListener('click', () => createSocialAccount('google'));
-        githubSocialBtn.addEventListener('click', () => createSocialAccount('github'));
-
-        // Form validation
-        signupForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-
+        signupForm.addEventListener('submit', async (event) => {
+            event.preventDefault();
             const fullName = document.getElementById('fullName').value.trim();
             const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const confirmPassword = document.getElementById('confirmPassword').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
             const mobileNumber = document.getElementById('mobileNumber').value.trim();
             const nameError = document.getElementById('nameError');
             const usernameError = document.getElementById('usernameError');
@@ -296,86 +261,28 @@
             nameError.textContent = '';
             usernameError.textContent = '';
 
-            let isValid = true;
-
             if (!fullName) {
-                nameError.textContent = 'Name is required';
-                isValid = false;
+                nameError.textContent = 'Full name is required.';
+                return;
             }
-
             if (!username) {
-                usernameError.textContent = 'Username is required';
-                isValid = false;
-            } else if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
-                usernameError.textContent = 'Username must be 3-20 characters (letters, numbers, underscore)';
-                isValid = false;
+                usernameError.textContent = 'Username is required.';
+                return;
             }
-
-            if (!password || password.length < 4) {
-                alert('Password must be at least 4 characters long.');
-                isValid = false;
-            }
-
-            if (!mobileNumber || mobileNumber.length < 8) {
-                alert('Please enter a valid mobile number for verification.');
-                isValid = false;
-            }
-
             if (password !== confirmPassword) {
-                alert('Passwords do not match.');
-                isValid = false;
+                usernameError.textContent = 'Passwords do not match.';
+                return;
             }
 
-            if (isValid) {
-                const existingUsers = JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-                const userExists = existingUsers.some(user => user.username === username);
-
-                if (userExists) {
-                    alert('This username is already registered. Please choose another one.');
-                    return;
-                }
-
-                const profileData = {
-                    fullName: fullName,
-                    username: username,
-                    emoji: '👤',
-                    bio: '',
-                    location: '',
-                    website: '',
-                    joinDate: 'March 2026',
-                    followers: 0,
-                    following: 0,
-                    posts: 0
-                };
-
-                existingUsers.push({ username, password, fullName, mobile: mobileNumber });
-                localStorage.setItem('registeredUsers', JSON.stringify(existingUsers));
-                localStorage.setItem('userProfile', JSON.stringify(profileData));
-                localStorage.setItem('loggedInUser', username);
-
-                signupForm.innerHTML = `
-                    <div class="success-msg">
-                        ✨ Profile created successfully!<br>
-                        Redirecting to your feed...
-                    </div>
-                `;
-
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 1800);
+            try {
+                const data = await API.post('/api/auth/signup', { fullName, username, password, confirmPassword, mobileNumber });
+                API.setToken(data.token);
+                API.setCurrentUser(data.user);
+                window.location.href = 'index.html';
+            } catch (err) {
+                usernameError.textContent = err.message || 'Could not create account';
             }
         });
-
-        // Add pulse animation
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes pulse {
-                0%, 100% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-            }
-        `;
-        document.head.appendChild(style);
     </script>
-    <script src="theme.js"></script>
 </body>
 </html>

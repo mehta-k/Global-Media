@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Messages | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
     <style>
         .messages-container {
             display: grid;
@@ -588,30 +589,22 @@
     </footer>
 
     <script>
+        if (!API.isLoggedIn()) {
+            window.location.href = 'index.html';
+        }
         const conversations = [];
         const chatHistory = {};
 
-        function openNewConversation() {
-            const name = prompt('Enter a name for your new conversation:');
-            if (!name) return;
-
-            const emoji = prompt('Enter an emoji for this contact (or leave blank):', '👤') || '👤';
-            const id = Date.now();
-            const conversation = {
-                id,
-                name,
-                emoji,
-                status: 'Active now',
-                unread: 0,
-                lastMessage: 'No messages yet',
-                pinned: false,
-                timestamp: Date.now(),
-            };
-
-            conversations.unshift(conversation);
-            chatHistory[id] = [];
-            renderConversations();
-            openChat(id);
+        async function openNewConversation() {
+            const username = prompt('Enter the username of the person you want to message:');
+            if (!username) return;
+            try {
+                const data = await API.post('/api/conversations', { username: username.trim() });
+                await loadConversations();
+                openChat(data.conversation.id);
+            } catch (err) {
+                alert(err.message || 'Could not start conversation');
+            }
         }
 
         let currentChat = null;
@@ -687,78 +680,73 @@
             `;
         }
 
-        function openChat(conversationId) {
+        async function openChat(conversationId) {
             const conv = conversations.find(c => c.id === conversationId);
+            if (!conv) return;
             currentChat = conv;
 
-            // Update UI
             document.getElementById('emptyState').style.display = 'none';
             document.getElementById('chatContainer').style.display = 'flex';
 
             document.getElementById('chatHeaderAvatar').textContent = conv.emoji;
             document.getElementById('chatHeaderName').textContent = conv.name;
-            document.getElementById('chatHeaderStatus').textContent = conv.status;
-
-            // Load messages
-            loadMessages(conversationId);
-            renderConversations();
-
-            // Mark as read
-            conv.unread = 0;
-            renderConversations();
-
-            // Show quick replies
+            document.getElementById('chatHeaderStatus').textContent = '@' + (conv.username || '');
             document.getElementById('quickReplies').style.display = 'flex';
+
+            renderConversations();
+            try {
+                const data = await API.get(`/api/conversations/${conv.id}/messages`);
+                renderMessages(data.messages);
+                await API.post(`/api/conversations/${conv.id}/read`).catch(() => {});
+                conv.unread = 0;
+                renderConversations();
+            } catch (err) {
+                console.error(err);
+            }
         }
 
-        function loadMessages(conversationId) {
-            const messagesContainer = document.getElementById('chatMessages');
-            const messages = chatHistory[conversationId] || [];
-
-            messagesContainer.innerHTML = messages.map((msg, index) => {
-                const timeStr = new Date(Date.now() - Math.random() * 3600000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        function renderMessages(messages) {
+            const container = document.getElementById('chatMessages');
+            const meId = API.getCurrentUser() ? API.getCurrentUser().id : null;
+            container.innerHTML = messages.map((m) => {
+                const own = m.senderId === meId;
+                const time = m.createdAt
+                    ? new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                    : '';
                 return `
-                    <div class="message ${msg.own ? 'own' : ''}">
-                        <div class="message-bubble ${msg.own ? 'sent' : 'received'}">
-                            ${msg.text}
-                        </div>
-                    </div>
-                `;
+                    <div class="message ${own ? 'own' : ''}">
+                        <div class="message-bubble ${own ? 'sent' : 'received'}">${escapeHtml(m.text)}</div>
+                        <div class="message-time">${time}</div>
+                    </div>`;
             }).join('');
-
-            // Scroll to bottom
-            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            container.scrollTop = container.scrollHeight;
         }
 
-        function sendMessage() {
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        async function sendMessage() {
             const input = document.getElementById('messageInput');
             const text = input.value.trim();
-
             if (!text || !currentChat) return;
 
-            // Add message to history
-            if (!chatHistory[currentChat.id]) {
-                chatHistory[currentChat.id] = [];
+            try {
+                const data = await API.post(`/api/conversations/${currentChat.id}/messages`, { text });
+                const container = document.getElementById('chatMessages');
+                const own = data.message.senderId === (API.getCurrentUser() && API.getCurrentUser().id);
+                container.insertAdjacentHTML('beforeend',
+                    `<div class="message own"><div class="message-bubble sent">${escapeHtml(data.message.text)}</div><div class="message-time">${data.message.createdAt ? new Date(data.message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}</div></div>`);
+                container.scrollTop = container.scrollHeight;
+                input.value = '';
+                currentChat.lastMessage = data.message.text;
+                currentChat.updatedAt = data.message.createdAt;
+                renderConversations();
+            } catch (err) {
+                alert(err.message || 'Could not send message');
             }
-            chatHistory[currentChat.id].push({ own: true, text: text });
-
-            // Update UI
-            loadMessages(currentChat.id);
-            input.value = '';
-
-            // Update last message and timestamp
-            currentChat.lastMessage = text;
-            currentChat.timestamp = Date.now();
-            renderConversations();
-
-            // Simulate response after 1 second
-            setTimeout(() => {
-                chatHistory[currentChat.id].push({ 
-                    own: false, 
-                    text: ['😊', 'That\'s great!', 'Totally agree! 🔥', 'Haha yes! 😂', 'Awesome! 🎉', 'I agree 👍', 'Thanks! 🙏'][Math.floor(Math.random() * 7)] 
-                });
-                loadMessages(currentChat.id);
-            }, 1000);
         }
 
         function sendQuickReply(text) {
@@ -800,11 +788,26 @@
             hint.style.display = hint.style.display === 'block' ? 'none' : 'block';
         }
 
-        function togglePinConversation(conversationId) {
-            const conv = conversations.find(c => c.id === conversationId);
-            if (conv) {
-                conv.pinned = !conv.pinned;
+        async function loadConversations() {
+            try {
+                const data = await API.get('/api/conversations');
+                conversations.length = 0;
+                data.conversations.forEach(c => conversations.push(c));
                 renderConversations();
+            } catch (err) {
+                console.error('Failed to load conversations', err);
+            }
+        }
+
+        async function togglePinConversation(conversationId) {
+            const conv = conversations.find(c => c.id === conversationId);
+            if (!conv) return;
+            try {
+                const data = await API.post(`/api/conversations/${conversationId}/pin`);
+                conv.pinned = data.conversation.pinned;
+                renderConversations();
+            } catch (err) {
+                console.error(err);
             }
         }
 
@@ -826,8 +829,8 @@
         }
 
         function openProfile() {
-            if (currentChat) {
-                alert(`Visiting ${currentChat.name}'s profile 👤`);
+            if (currentChat && currentChat.username) {
+                window.location.href = 'user-profile.html?u=' + encodeURIComponent(currentChat.username);
             }
         }
 
@@ -836,6 +839,9 @@
             searchQuery = e.target.value;
             renderConversations();
         });
+
+        // Initial load
+        loadConversations();
 
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {

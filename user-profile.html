@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Your Profile | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
 </head>
 <body>
     <!-- Navigation Bar -->
@@ -15,8 +16,8 @@
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link">Home</a>
-                <a href="signup.html" class="nav-link">Create Profile</a>
-                <a href="#" class="nav-link">Messages</a>
+                <a href="reels.html" class="nav-link">Reels</a>
+                <a href="messages.html" class="nav-link">Messages</a>
                 <a href="user-profile.html" class="nav-link active">Profile</a>
             </div>
             <div class="user-menu">
@@ -62,13 +63,7 @@
                     </div>
                 </div>
 
-                <div style="padding: 0 1.5rem 2rem;">
-                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 14px; padding: 1.5rem; text-align: center; color: var(--text-secondary);">
-                        <p style="font-size: 1.2rem; margin: 0 0 0.5rem; color: var(--text-primary);">No posts yet</p>
-                        <p style="margin: 0;">Start sharing your moments! 📸</p>
-                        <a href="index.html" class="btn btn-primary" style="display: inline-block; margin-top: 1rem; text-decoration: none;">Go to Feed</a>
-                    </div>
-                </div>
+                <div id="profilePosts" style="padding: 0 1.5rem 2rem;"></div>
             </div>
         </main>
     </div>
@@ -176,59 +171,136 @@
     </style>
 
     <script>
-        // Load profile from localStorage
-        function loadProfile() {
-            const profileData = localStorage.getItem('userProfile');
-            
-            if (!profileData) {
-                // No profile created yet, show empty state
+        let viewingUsername = null;
+        let isSelf = false;
+
+        function setAvatar(emoji) {
+            const large = document.getElementById('profileAvatarLarge');
+            const nav = document.getElementById('userAvatarNav');
+            if (large) large.textContent = emoji || '👤';
+            if (nav) nav.textContent = emoji || '👤';
+        }
+
+        async function loadProfile() {
+            if (!API.isLoggedIn()) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const params = new URLSearchParams(window.location.search);
+            const paramUser = params.get('u');
+            const me = API.getCurrentUser();
+            viewingUsername = paramUser || (me && me.username);
+            isSelf = !paramUser;
+
+            if (!viewingUsername) {
                 document.getElementById('emptyProfileState').style.display = 'block';
                 document.getElementById('profileView').style.display = 'none';
                 return;
             }
 
-            // Show profile view
-            document.getElementById('emptyProfileState').style.display = 'none';
-            document.getElementById('profileView').style.display = 'block';
+            try {
+                const data = await API.get(`/api/users/${viewingUsername}`);
+                const profile = data.user;
+                document.getElementById('emptyProfileState').style.display = 'none';
+                document.getElementById('profileView').style.display = 'block';
+                document.title = `${profile.fullName} - Profile | Global Media`;
+                document.getElementById('profileName').textContent = profile.fullName;
+                document.getElementById('profileHandle').textContent = '@' + profile.username;
+                document.getElementById('profileBio').textContent = profile.bio || 'Welcome to my profile!';
+                document.getElementById('profileLocation').textContent = profile.location ? `📍 ${profile.location}` : '📍 Location not set';
+                document.getElementById('profileWebsite').textContent = profile.website ? `🔗 ${profile.website}` : '🔗 No website';
+                document.getElementById('profileJoinDate').textContent = `📅 Joined ${new Date(profile.joinDate).getFullYear()}`;
+                setAvatar(profile.emoji);
 
-            const profile = JSON.parse(profileData);
+                // Render posts
+                renderProfilePosts(data.posts);
 
-            // Update page title
-            document.title = `${profile.fullName} - Profile | Global Media`;
+                // Followers/following counts
+                const fc = document.getElementById('profileFollowers');
+                if (fc) fc.textContent = `👥 ${profile.followers} followers · ${profile.following} following`;
 
-            // Update profile info
-            document.getElementById('profileName').textContent = profile.fullName;
-            document.getElementById('profileHandle').textContent = '@' + profile.username;
-            document.getElementById('profileBio').textContent = profile.bio || 'Welcome to my profile!';
-            document.getElementById('profileLocation').textContent = profile.location ? `📍 ${profile.location}` : '📍 Location not set';
-            document.getElementById('profileWebsite').textContent = profile.website ? `🔗 ${profile.website}` : '🔗 No website';
-            document.getElementById('profileJoinDate').textContent = `📅 Joined ${profile.joinDate || new Date().getFullYear()}`;
-            
-            // Update avatar
-            const emoji = profile.emoji;
-            document.getElementById('profileAvatarLarge').textContent = emoji;
-            document.getElementById('userAvatarNav').textContent = emoji;
+                // Show/hide follow or edit button
+                setupProfileActions(profile);
+            } catch (err) {
+                document.getElementById('profileView').style.display = 'none';
+                document.getElementById('emptyProfileState').style.display = 'block';
+            }
         }
 
-        // Open profile creation/edit modal
-        function openCreateProfileModal() {
-            const profileData = localStorage.getItem('userProfile');
-            
-            if (profileData) {
-                // Edit mode
-                const profile = JSON.parse(profileData);
-                document.getElementById('profileModalTitle').textContent = 'Edit Your Profile';
-                document.getElementById('profileFullName').value = profile.fullName;
-                document.getElementById('profileUsername').value = profile.username;
-                document.getElementById('profileBioInput').value = profile.bio || '';
-                document.getElementById('profileLocation').value = profile.location || '';
-                document.getElementById('profileWebsiteInput').value = profile.website || '';
-            } else {
-                // Create mode
-                document.getElementById('profileModalTitle').textContent = 'Create Your Profile';
-                document.getElementById('profileForm').reset();
+        function renderProfilePosts(posts) {
+            const box = document.getElementById('profilePosts');
+            if (!box) return;
+            if (!posts || !posts.length) {
+                box.innerHTML = `<div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:14px;padding:1.5rem;text-align:center;color:var(--text-secondary);">
+                    <p style="font-size:1.2rem;margin:0 0 0.5rem;color:var(--text-primary);">No posts yet</p>
+                    <p style="margin:0;">Start sharing your moments! 📸</p>
+                    <a href="index.html" class="btn btn-primary" style="display:inline-block;margin-top:1rem;text-decoration:none;">Go to Feed</a>
+                </div>`;
+                return;
             }
-            
+            box.innerHTML = posts.map((p) => `
+                <div style="background:var(--bg-primary);border:1px solid var(--border-color);border-radius:14px;padding:1.25rem;margin-bottom:1rem;">
+                    <div style="display:flex;gap:0.75rem;align-items:center;margin-bottom:0.5rem;">
+                        <div style="width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#FF006E 0%,#8338EC 100%);display:flex;align-items:center;justify-content:center;font-size:1.2rem;">${p.author.emoji || '👤'}</div>
+                        <div><strong>${p.author.fullName}</strong> <span style="color:var(--text-secondary);">@${p.author.username}</span></div>
+                    </div>
+                    <div style="line-height:1.5;">${escapeHtml(p.content)}</div>
+                    <div style="color:var(--text-secondary);font-size:0.85rem;margin-top:0.5rem;">❤️ ${p.likes} · 💬 ${p.comments} · 🔄 ${p.retweets}</div>
+                </div>`).join('');
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function setupProfileActions(profile) {
+            const editBtns = document.querySelectorAll('button[onclick="openCreateProfileModal()"]');
+            editBtns.forEach((btn) => {
+                if (isSelf) {
+                    btn.style.display = '';
+                    btn.textContent = 'Edit Profile';
+                } else {
+                    btn.style.display = 'none';
+                }
+            });
+
+            let actions = document.getElementById('profileFollowActions');
+            if (!actions) {
+                actions = document.createElement('div');
+                actions.id = 'profileFollowActions';
+                const header = document.querySelector('#profileView > div:nth-child(2)');
+                if (header) header.appendChild(actions);
+            }
+            if (isSelf) {
+                actions.innerHTML = '';
+                return;
+            }
+            const me = API.getCurrentUser();
+            actions.innerHTML = `<button class="btn btn-primary" id="followBtn" style="margin-left:1rem;">${profile.isFollowing ? 'Unfollow' : 'Follow'}</button>`;
+            document.getElementById('followBtn').addEventListener('click', async () => {
+                try {
+                    const data = await API.post(`/api/users/${profile.username}/follow`);
+                    document.getElementById('followBtn').textContent = data.user.isFollowing ? 'Unfollow' : 'Follow';
+                    document.getElementById('profileFollowers').textContent = `👥 ${data.user.followers} followers · ${data.user.following} following`;
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+        }
+
+        function openCreateProfileModal() {
+            document.getElementById('profileModalTitle').textContent = 'Edit Your Profile';
+            const me = API.getCurrentUser();
+            if (me) {
+                document.getElementById('profileFullName').value = me.fullName || '';
+                document.getElementById('profileUsername').value = me.username || '';
+                document.getElementById('profileBioInput').value = me.bio || '';
+                document.getElementById('profileLocation').value = me.location || '';
+                document.getElementById('profileWebsiteInput').value = me.website || '';
+            }
             document.getElementById('profileModal').style.display = 'flex';
         }
 
@@ -236,63 +308,44 @@
             document.getElementById('profileModal').style.display = 'none';
         }
 
-        // Handle profile form submission
         document.addEventListener('DOMContentLoaded', function() {
             const profileForm = document.getElementById('profileForm');
-            
-            profileForm.addEventListener('submit', function(e) {
+            profileForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-
-                const profileData = {
-                    emoji: '👤',
+                const payload = {
                     fullName: document.getElementById('profileFullName').value,
-                    username: document.getElementById('profileUsername').value,
                     bio: document.getElementById('profileBioInput').value,
                     location: document.getElementById('profileLocation').value,
-                    website: document.getElementById('profileWebsiteInput').value,
-                    followers: 0,
-                    following: 0,
-                    posts: 0,
-                    joinDate: new Date().getFullYear()
+                    website: document.getElementById('profileWebsiteInput').value
                 };
-
-                // Save to localStorage
-                localStorage.setItem('userProfile', JSON.stringify(profileData));
-
-                // Show success message
-                alert('✨ Profile saved successfully!');
-
-                // Close modal and reload profile
-                closeProfileModal();
-                loadProfile();
-            });
-
-            // Close modal when clicking outside
-            const modal = document.getElementById('profileModal');
-            modal.addEventListener('click', function(e) {
-                if (e.target === modal) {
+                try {
+                    const data = await API.patch('/api/users/me', payload);
+                    API.setCurrentUser(data.user);
+                    alert('✨ Profile saved successfully!');
                     closeProfileModal();
+                    loadProfile();
+                } catch (err) {
+                    alert(err.message || 'Could not save profile');
                 }
             });
 
-            // Load profile on page load
+            const modal = document.getElementById('profileModal');
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) closeProfileModal();
+            });
+
             loadProfile();
         });
 
         function switchTab(event, tabName) {
-            // Hide all tabs
             const tabs = document.querySelectorAll('.tab-content');
             tabs.forEach(tab => tab.style.display = 'none');
-
-            // Remove active class from all buttons
             const buttons = document.querySelectorAll('.tab-btn');
             buttons.forEach(btn => btn.classList.remove('active'));
-
-            // Show selected tab
-            document.getElementById(tabName + '-tab').style.display = 'block';
-            event.target.classList.add('active');
+            const tab = document.getElementById(tabName + '-tab');
+            if (tab) tab.style.display = 'block';
+            if (event && event.target) event.target.classList.add('active');
         }
-
     </script>
     <script src="theme.js"></script>
 </body>

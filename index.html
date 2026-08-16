@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
+    <script src="feed.js"></script>
 </head>
 <body>
     <style>
@@ -296,25 +298,17 @@
             <!-- Create Post Section -->
             <div style="background: var(--bg-primary); border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color);">
                 <div style="display: flex; gap: 1rem; align-items: flex-start;">
-                    <img src="https://via.placeholder.com/48" alt="Your avatar" style="width: 48px; height: 48px; border-radius: 50%; object-fit: cover;">
-                    <input type="text" placeholder="What's happening!?" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 24px; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem; cursor: pointer;">
+                    <div id="composerAvatar" style="width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, #FF006E 0%, #8338EC 100%); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">👤</div>
+                    <input type="text" id="postInput" placeholder="What's happening!?" style="flex: 1; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 24px; padding: 0.75rem 1rem; color: var(--text-primary); font-size: 1rem; cursor: text;">
                 </div>
                 <div style="display: flex; justify-content: flex-end; margin-top: 1rem; gap: 0.5rem;">
-                    <button class="btn btn-secondary">📷 Media</button>
-                    <button class="btn btn-primary">Post</button>
+                    <button class="btn btn-secondary" type="button" id="mediaBtn">📷 Media</button>
+                    <button class="btn btn-primary" type="button" id="postBtn">Post</button>
                 </div>
             </div>
 
-            <!-- Empty Feed Prompt -->
-            <div style="background: var(--bg-primary); border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; border: 1px solid var(--border-color); text-align: center;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">✨</div>
-                <h2 style="margin: 0 0 0.75rem 0;">Your feed is ready</h2>
-                <p style="margin: 0 0 1.5rem 0; color: var(--text-secondary); line-height: 1.6;">There are no example posts here anymore. Start creating your own post, reel, or profile content to make this page come alive.</p>
-                <div style="display: flex; justify-content: center; gap: 0.75rem; flex-wrap: wrap;">
-                    <a href="reels.html" class="btn btn-primary" style="min-width: 140px;">Create Reel</a>
-                    <a href="user-profile.html" class="btn btn-secondary" style="min-width: 140px;">Set Up Profile</a>
-                </div>
-            </div>
+            <!-- Live Feed -->
+            <div id="feed-posts"></div>
         </main>
 
         <!-- Sidebar -->
@@ -369,116 +363,70 @@
             appShell.style.display = 'none';
         }
 
-        function getRegisteredUsers() {
-            try {
-                return JSON.parse(localStorage.getItem('registeredUsers') || '[]');
-            } catch {
-                return [];
+        function applyUser(user) {
+            if (!user) return;
+            const navAvatar = document.querySelector('.user-avatar');
+            if (navAvatar) {
+                navAvatar.removeAttribute('src');
+                navAvatar.textContent = user.emoji || '👤';
+                navAvatar.style.background = 'linear-gradient(135deg, #FF006E 0%, #8338EC 100%)';
+                navAvatar.style.display = 'flex';
+                navAvatar.style.alignItems = 'center';
+                navAvatar.style.justifyContent = 'center';
+                navAvatar.style.fontSize = '1.2rem';
             }
-        }
-
-        function ensureProfile(username, fullName) {
-            const profile = JSON.parse(localStorage.getItem('userProfile') || 'null');
-            if (profile) return;
-
-            localStorage.setItem('userProfile', JSON.stringify({
-                fullName: fullName || username,
-                username: username,
-                emoji: '👤',
-                bio: '',
-                location: '',
-                website: '',
-                joinDate: 'March 2026',
-                followers: 0,
-                following: 0,
-                posts: 0
-            }));
+            const composer = document.getElementById('composerAvatar');
+            if (composer) composer.textContent = user.emoji || '👤';
         }
 
         function checkSession() {
-            const currentUser = localStorage.getItem('loggedInUser');
-            if (currentUser) {
+            if (API.isLoggedIn()) {
+                applyUser(API.getCurrentUser());
                 showApp();
+                if (window.loadFeed) loadFeed();
             } else {
                 showAuth();
             }
         }
 
-        function generateVerificationCode() {
-            return String(Math.floor(100000 + Math.random() * 900000));
-        }
-
-        function sendMobileVerification(user) {
-            const phoneDigits = (user.mobile || '********').replace(/\D/g, '');
-            const masked = phoneDigits ? `ending in ${phoneDigits.slice(-4)}` : 'on your registered mobile.';
-            pendingCode = generateVerificationCode();
-            localStorage.setItem(`mobileOtp_${user.username}`, pendingCode);
-            mobileConfirmText.textContent = `A 6-digit confirmation code was sent to your mobile device ${masked}. Demo code: ${pendingCode}`;
-            mobileConfirmMessage.textContent = '';
-            mobileConfirmModal.style.display = 'flex';
-        }
-
-        function finishLogin(username) {
-            localStorage.setItem('loggedInUser', username);
+        function loginUser(username, password) {
             loginError.textContent = '';
-            mobileConfirmModal.style.display = 'none';
-            checkSession();
+            API.post('/api/auth/login', { username, password })
+                .then((data) => {
+                    API.setToken(data.token);
+                    API.setCurrentUser(data.user);
+                    applyUser(data.user);
+                    showApp();
+                    loadFeed();
+                })
+                .catch((err) => {
+                    loginError.textContent = err.message;
+                });
         }
 
-        function loginUser(username, password, source = 'local') {
-            const users = getRegisteredUsers();
-            const found = users.find(user => user.username === username && user.password === password);
-
-            if (!found) {
-                loginError.textContent = source === 'social'
-                    ? 'This social demo account is not available yet. Please register once.'
-                    : 'Invalid username or password.';
-                return false;
-            }
-
-            if (found.mobile) {
-                pendingLoginUser = found.username;
-                sendMobileVerification(found);
-                return true;
-            }
-
-            finishLogin(found.username);
-            return true;
+        function createDemoUser() {
+            const suffix = Date.now() + Math.floor(Math.random() * 1000);
+            const username = 'demo_' + suffix;
+            const password = 'demo' + suffix;
+            const fullName = 'Demo User ' + Math.floor(Math.random() * 9000 + 1000);
+            API.post('/api/auth/signup', { fullName, username, password, mobileNumber: '+1 555 0100' })
+                .then((data) => {
+                    API.setToken(data.token);
+                    API.setCurrentUser(data.user);
+                    applyUser(data.user);
+                    showApp();
+                    loadFeed();
+                })
+                .catch((err) => {
+                    loginError.textContent = err.message;
+                });
         }
 
-        function createSocialUser(provider) {
-            const providerMap = {
-                google: { label: 'Google', prefix: 'google' },
-                github: { label: 'GitHub', prefix: 'github' },
-                demo: { label: 'Demo', prefix: 'demo' }
-            };
-
-            const socialProvider = providerMap[provider];
-            if (!socialProvider) return;
-
-            const uniqueSuffix = `${Date.now()}${Math.floor(Math.random() * 1000)}`;
-            const username = `${socialProvider.prefix}_${uniqueSuffix}`;
-            const password = `${socialProvider.prefix}@${uniqueSuffix}`;
-            const fullName = `${socialProvider.label} User ${Math.floor(Math.random() * 9900 + 100)}`;
-            const mobile = `9${Math.floor(100000000 + Math.random() * 900000000)}`;
-            const socialUser = {
-                username,
-                password,
-                fullName,
-                mobile
-            };
-
-            const users = getRegisteredUsers();
-            users.push(socialUser);
-            localStorage.setItem('registeredUsers', JSON.stringify(users));
-
-            ensureProfile(username, fullName);
-            finishLogin(username);
-            loginError.textContent = '';
-        }
-
-        document.querySelectorAll('[data-social]').forEach(button => {
-            button.addEventListener('click', () => createSocialUser(button.dataset.social));
+        document.querySelectorAll('[data-social]').forEach((button) => {
+            button.addEventListener('click', () => {
+                if (button.dataset.social === 'demo') createDemoUser();
+                else alert('Social login with ' + button.dataset.social + ' is not available in this demo. Use "Continue as Demo User" or register.');
+            });
         });
 
         forgotPasswordBtn.addEventListener('click', () => {
@@ -492,60 +440,9 @@
             }
         });
 
-        mobileConfirmModal.addEventListener('click', (event) => {
-            if (event.target === mobileConfirmModal) {
-                mobileConfirmModal.style.display = 'none';
-            }
-        });
-
-        confirmDeviceButton.addEventListener('click', () => {
-            const typedCode = mobileCodeInput.value.trim();
-            const storedCode = localStorage.getItem(`mobileOtp_${pendingLoginUser}`);
-
-            if (!pendingLoginUser || !storedCode) {
-                mobileConfirmMessage.textContent = 'No pending device verification found.';
-                return;
-            }
-
-            if (typedCode === storedCode) {
-                localStorage.removeItem(`mobileOtp_${pendingLoginUser}`);
-                finishLogin(pendingLoginUser);
-            } else {
-                mobileConfirmMessage.textContent = 'Incorrect confirmation code. Please try again.';
-            }
-        });
-
         recoverPasswordBtn.addEventListener('click', () => {
-            const username = document.getElementById('recoveryUsername').value.trim();
-            const password = document.getElementById('recoveryPassword').value.trim();
-            const confirmPassword = document.getElementById('recoveryConfirmPassword').value.trim();
-            const users = getRegisteredUsers();
-
-            if (!username || !password || !confirmPassword) {
-                recoveryMessage.textContent = 'Please fill all recovery fields.';
-                return;
-            }
-
-            if (password.length < 4) {
-                recoveryMessage.textContent = 'Password must be at least 4 characters long.';
-                return;
-            }
-
-            if (password !== confirmPassword) {
-                recoveryMessage.textContent = 'Passwords do not match.';
-                return;
-            }
-
-            const userIndex = users.findIndex(user => user.username === username);
-            if (userIndex === -1) {
-                recoveryMessage.textContent = 'No matching account was found for this username.';
-                return;
-            }
-
-            users[userIndex].password = password;
-            localStorage.setItem('registeredUsers', JSON.stringify(users));
-            recoveryMessage.textContent = 'Password reset successful. You can now log in with your new password.';
-            recoveryMessage.style.color = '#06D6A0';
+            recoveryMessage.textContent = 'Password reset is not available in this demo backend. Please register a new account.';
+            recoveryMessage.style.color = 'var(--primary-color)';
         });
 
         loginForm.addEventListener('submit', function (e) {
@@ -556,7 +453,7 @@
         });
 
         logoutBtn.addEventListener('click', function () {
-            localStorage.removeItem('loggedInUser');
+            API.logout();
             window.location.href = 'index.html';
         });
 

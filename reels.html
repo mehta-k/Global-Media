@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reels | Global Media</title>
     <link rel="stylesheet" href="styles.css">
+    <script src="api.js"></script>
     <style>
         .reels-container {
             display: flex;
@@ -593,62 +594,39 @@
             });
 
             // Handle form submission
-            document.getElementById('reelForm').addEventListener('submit', function(e) {
+            document.getElementById('reelForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-
-                const videoInput = document.getElementById('reelVideo');
-                const file = videoInput.files && videoInput.files[0];
-
-                if (!file) {
-                    alert('Please choose a video file first.');
+                const description = document.getElementById('reelDescription').value;
+                if (!description) {
+                    alert('Please add a caption.');
                     return;
                 }
-
-                const newReel = {
-                    emoji: '🎬',
-                    creator: document.getElementById('reelCreator').value,
-                    followers: document.getElementById('reelFollowers').value,
-                    description: document.getElementById('reelDescription').value,
-                    music: document.getElementById('reelMusic').value,
-                    likes: parseInt(document.getElementById('reelLikes').value) || 0,
-                    comments: 0,
-                    videoUrl: URL.createObjectURL(file)
-                };
-
-                reels.unshift(newReel);
-                localStorage.setItem('userReels', JSON.stringify(reels));
-                renderReelsList();
-                loadReel(0);
-                alert('✨ Reel posted successfully! Your reel is now at the top.');
-                closeCreateReelModal();
+                try {
+                    await API.post('/api/posts', { content: description, type: 'reel' });
+                    await refreshReels();
+                    alert('✨ Reel posted successfully!');
+                    closeCreateReelModal();
+                } catch (err) {
+                    alert(err.message || 'Could not post reel');
+                }
             });
 
             // Handle the simple upload form on the page too
-            document.getElementById('singleUploadForm').addEventListener('submit', function(e) {
+            document.getElementById('singleUploadForm').addEventListener('submit', async function(e) {
                 e.preventDefault();
-                const file = document.getElementById('reelVideoInput').files && document.getElementById('reelVideoInput').files[0];
-                if (!file) {
-                    alert('Please choose a video file first.');
+                const description = document.getElementById('reelCaptionInput').value;
+                if (!description) {
+                    alert('Please add a caption.');
                     return;
                 }
-
-                const newReel = {
-                    emoji: '🎬',
-                    creator: document.getElementById('reelUserName').value,
-                    followers: document.getElementById('reelFollowersInput').value,
-                    description: document.getElementById('reelCaptionInput').value,
-                    music: document.getElementById('reelMusicInput').value,
-                    likes: parseInt(document.getElementById('reelEstimateInput').value) || 0,
-                    comments: 0,
-                    videoUrl: URL.createObjectURL(file)
-                };
-
-                reels.unshift(newReel);
-                localStorage.setItem('userReels', JSON.stringify(reels));
-                renderReelsList();
-                loadReel(0);
-                alert('✨ Your reel is live now.');
-                this.reset();
+                try {
+                    await API.post('/api/posts', { content: description, type: 'reel' });
+                    await refreshReels();
+                    alert('✨ Your reel is live now.');
+                    this.reset();
+                } catch (err) {
+                    alert(err.message || 'Could not post reel');
+                }
             });
 
             // Trending audio click handlers
@@ -665,15 +643,23 @@
                 });
             });
 
-            // Load saved reels from localStorage
-            const savedReels = localStorage.getItem('userReels');
-            if (savedReels) {
-                reels.length = 0;
-                reels.push(...JSON.parse(savedReels));
-            }
         });
 
-        const reels = [];
+        if (!API.isLoggedIn()) {
+            window.location.href = 'index.html';
+        }
+        let reels = [];
+
+        async function refreshReels() {
+            try {
+                const data = await API.get('/api/posts?type=reel');
+                reels = data.posts;
+            } catch (err) {
+                console.error('Failed to load reels', err);
+            }
+            renderReelsList();
+            loadReel(0);
+        }
 
         let currentReel = 0;
         let isPlaying = true;
@@ -699,9 +685,16 @@
             }
 
             const reel = reels[index];
+            const creator = reel.author ? reel.author.fullName : (reel.creator || 'Creator');
+            const handle = reel.author ? '@' + reel.author.username : (reel.followers || '');
+            const emoji = reel.author ? (reel.author.emoji || '🎬') : (reel.emoji || '🎬');
+            const description = reel.content || reel.description || '';
+            const music = reel.music || 'Original Audio';
+            const likes = reel.likes || 0;
+            const comments = reel.comments || 0;
             const mediaMarkup = reel.videoUrl
                 ? `<video src="${reel.videoUrl}" style="width:100%;height:100%;object-fit:cover; background:#000;" muted loop playsinline autoplay></video>`
-                : `${reel.emoji}`;
+                : `${emoji}`;
 
             document.getElementById('reelContent').innerHTML = `
                 ${mediaMarkup}
@@ -710,12 +703,12 @@
                     <div class="reel-progress-bar"></div>
                 </div>
             `;
-            document.getElementById('reelCreator').textContent = reel.creator;
-            document.getElementById('reelFollowers').textContent = reel.followers + ' followers';
-            document.getElementById('reelDescription').textContent = reel.description;
-            document.getElementById('reelMusic').textContent = reel.music;
-            document.getElementById('likeCount').textContent = reel.likes.toLocaleString();
-            document.getElementById('commentCount').textContent = reel.comments.toLocaleString();
+            document.getElementById('reelCreator').textContent = creator;
+            document.getElementById('reelFollowers').textContent = handle;
+            document.getElementById('reelDescription').textContent = description;
+            document.getElementById('reelMusic').textContent = music;
+            document.getElementById('likeCount').textContent = likes.toLocaleString();
+            document.getElementById('commentCount').textContent = comments.toLocaleString();
 
             // Update sidebar highlight
             document.querySelectorAll('.reel-list-item').forEach((item, i) => {
@@ -736,12 +729,16 @@
                     <p style="font-size: 0.85rem; margin: 0;">Click Create to add your first reel!</p>
                 </div>`;
             } else {
-                reelsList.innerHTML = reels.map((reel, index) => `
+                reelsList.innerHTML = reels.map((reel, index) => {
+                    const emoji = reel.author ? (reel.author.emoji || '🎬') : (reel.emoji || '🎬');
+                    const creator = reel.author ? reel.author.fullName : (reel.creator || 'Creator');
+                    const desc = (reel.content || reel.description || '').substring(0, 40);
+                    return `
                     <div class="reel-list-item ${index === 0 ? 'active' : ''}" onclick="switchReel(${index})">
-                        <h4>${reel.emoji} ${reel.creator}</h4>
-                        <p>${reel.description.substring(0, 40)}...</p>
-                    </div>
-                `).join('');
+                        <h4>${emoji} ${creator}</h4>
+                        <p>${desc}...</p>
+                    </div>`;
+                }).join('');
             }
         }
 
@@ -785,13 +782,16 @@
         }
 
         function likeReel(btn) {
+            const reel = reels[currentReel];
+            if (!reel || !reel.id) return;
             btn.style.animation = 'pulse 0.6s ease';
-            const count = document.getElementById('likeCount');
-            count.textContent = (parseInt(count.textContent) + 1).toLocaleString();
+            API.post('/api/posts/' + reel.id + '/like').then((data) => {
+                document.getElementById('likeCount').textContent = data.post.likes.toLocaleString();
+            }).catch(() => {});
         }
 
         function commentReel() {
-            alert('Comments coming soon! 💬');
+            alert('Comments are available on the post in your feed 💬');
         }
 
         function shareReel() {
@@ -799,8 +799,12 @@
         }
 
         function saveReel(btn) {
-            btn.textContent = btn.textContent === '🔖' ? '✅' : '🔖';
-            alert(btn.textContent === '✅' ? 'Reel saved! 📌' : 'Reel unsaved');
+            const reel = reels[currentReel];
+            if (!reel || !reel.id) return;
+            API.post('/api/posts/' + reel.id + '/save').then(() => {
+                btn.textContent = btn.textContent === '🔖' ? '✅' : '🔖';
+                alert(btn.textContent === '✅' ? 'Reel saved! 📌' : 'Reel unsaved');
+            }).catch((err) => alert(err.message));
         }
 
         // Keyboard controls
@@ -871,8 +875,7 @@
         document.head.appendChild(style);
 
         // Initialize
-        renderReelsList();
-        loadReel(0);
+        refreshReels();
     </script>
     <script src="theme.js"></script>
 </body>
