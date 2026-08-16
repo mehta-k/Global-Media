@@ -3,6 +3,7 @@
 A social media web app (Twitter-style) with a **Node + Express backend** and a vanilla HTML/CSS/JS frontend.
 
 ## Features (backend API)
+- **Database**: SQLite (`node:sqlite`), no external DB server needed
 - **Auth**: signup / login with JWT, password hashing (bcrypt)
 - **Posts**: create, delete, like, retweet, save; feed + reels (type `reel`)
 - **Comments**: add / list comments on posts
@@ -10,7 +11,7 @@ A social media web app (Twitter-style) with a **Node + Express backend** and a v
 - **Messages**: conversations + direct messages
 - **Explore**: search posts + users, trending hashtags
 
-Data is stored in `data/db.json` (a simple JSON file store — no database setup required).
+Data is stored in a **SQLite database** (`server/data/global_media.db`, created automatically on first run via Node's built-in `node:sqlite` — no database server to install). User accounts, posts, likes, comments, messages, profiles and follows all persist there.
 
 ## Run it
 ```bash

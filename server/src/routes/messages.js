@@ -103,13 +103,7 @@ router.post('/:id/read', authMiddleware, (req, res) => {
   }
   conversation.unread = 0;
   db.update('conversations', conversation.id, conversation);
-  const data = db.all();
-  data.messages
-    .filter((m) => m.conversationId === conversation.id && m.senderId !== req.userId)
-    .forEach((m) => {
-      m.read = true;
-    });
-  db.save(data);
+  db.markMessagesRead(conversation.id, req.userId);
   res.json({ success: true });
 });
 

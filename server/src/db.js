@@ -2,105 +2,198 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import bcrypt from 'bcryptjs';
+import { DatabaseSync } from 'node:sqlite';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '..', 'data');
-const DB_FILE = path.join(DATA_DIR, 'db.json');
+const DB_FILE = path.join(DATA_DIR, 'global_media.db');
 
-const DEFAULT_DB = {
-  users: [],
-  posts: [],
-  comments: [],
-  conversations: [],
-  messages: []
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
+
+const sqlite = new DatabaseSync(DB_FILE);
+sqlite.exec('PRAGMA journal_mode = WAL;');
+
+sqlite.exec(`
+  CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    fullName TEXT,
+    username TEXT UNIQUE,
+    password TEXT,
+    mobile TEXT,
+    avatar TEXT,
+    emoji TEXT DEFAULT '👤',
+    bio TEXT DEFAULT '',
+    location TEXT DEFAULT '',
+    website TEXT DEFAULT '',
+    followers INTEGER DEFAULT 0,
+    following INTEGER DEFAULT 0,
+    followingList TEXT DEFAULT '[]',
+    followerList TEXT DEFAULT '[]',
+    joinDate TEXT,
+    createdAt TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS posts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    userId INTEGER,
+    content TEXT,
+    image TEXT,
+    type TEXT DEFAULT 'post',
+    createdAt TEXT,
+    timestamp TEXT,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    retweets INTEGER DEFAULT 0,
+    likedBy TEXT DEFAULT '[]',
+    savedBy TEXT DEFAULT '[]',
+    retweetedBy TEXT DEFAULT '[]'
+  );
+
+  CREATE TABLE IF NOT EXISTS comments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    postId INTEGER,
+    userId INTEGER,
+    content TEXT,
+    createdAt TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS conversations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    participants TEXT DEFAULT '[]',
+    lastMessage TEXT DEFAULT '',
+    unread INTEGER DEFAULT 0,
+    pinned INTEGER DEFAULT 0,
+    createdAt TEXT,
+    updatedAt TEXT
+  );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    conversationId INTEGER,
+    senderId INTEGER,
+    text TEXT,
+    createdAt TEXT,
+    read INTEGER DEFAULT 0
+  );
+`);
+
+const JSON_COLS = {
+  users: ['followingList', 'followerList'],
+  posts: ['likedBy', 'savedBy', 'retweetedBy'],
+  conversations: ['participants']
 };
 
-function ensureStore() {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-  if (!fs.existsSync(DB_FILE)) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(DEFAULT_DB, null, 2));
-  }
+function coerce(v) {
+  if (typeof v === 'boolean') return v ? 1 : 0;
+  if (v !== null && typeof v === 'object') return JSON.stringify(v);
+  return v;
 }
 
-function read() {
-  ensureStore();
-  try {
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
-  } catch {
-    return structuredClone(DEFAULT_DB);
-  }
-}
-
-function write(db) {
-  ensureStore();
-  fs.writeFileSync(DB_FILE, JSON.stringify(db, null, 2));
+function mapRow(collection, row) {
+  if (!row) return row;
+  const o = Object.assign({}, row);
+  (JSON_COLS[collection] || []).forEach((c) => {
+    if (o[c] != null) {
+      try {
+        o[c] = JSON.parse(o[c]);
+      } catch {
+        o[c] = [];
+      }
+    }
+  });
+  return o;
 }
 
 export const db = {
-  all: read,
-  save: write,
+  _db: sqlite,
 
-  // Generic collection helpers
+  selectAll(collection) {
+    const rows = sqlite.prepare(`SELECT * FROM ${collection}`).all();
+    return rows.map((r) => mapRow(collection, r));
+  },
+
+  all() {
+    return {
+      users: this.selectAll('users'),
+      posts: this.selectAll('posts'),
+      comments: this.selectAll('comments'),
+      conversations: this.selectAll('conversations'),
+      messages: this.selectAll('messages')
+    };
+  },
+
   find(collection, predicate) {
-    return read()[collection].find(predicate);
+    return this.selectAll(collection).find(predicate);
   },
+
   filter(collection, predicate) {
-    return read()[collection].filter(predicate);
+    return this.selectAll(collection).filter(predicate);
   },
+
   insert(collection, item) {
-    const data = read();
-    data[collection].push(item);
-    write(data);
-    return item;
+    const cols = Object.keys(item).filter((k) => item[k] !== undefined);
+    const jsonCols = JSON_COLS[collection] || [];
+    const values = cols.map((k) => coerce(jsonCols.includes(k) ? JSON.stringify(item[k]) : item[k]));
+    const ph = cols.map(() => '?').join(', ');
+    sqlite.prepare(`INSERT INTO ${collection} (${cols.join(',')}) VALUES (${ph})`).run(...values);
+    const id = item.id != null ? item.id : Number(sqlite.prepare('SELECT last_insert_rowid() AS id').get().id);
+    return this.find(collection, (r) => r.id === id);
   },
+
   update(collection, id, patch) {
-    const data = read();
-    const idx = data[collection].findIndex((x) => x.id === id);
-    if (idx === -1) return null;
-    data[collection][idx] = { ...data[collection][idx], ...patch };
-    write(data);
-    return data[collection][idx];
+    const jsonCols = JSON_COLS[collection] || [];
+    const cols = Object.keys(patch).filter((k) => patch[k] !== undefined);
+    const sets = cols.map((k) => `${k} = ?`).join(', ');
+    const values = cols.map((k) => coerce(jsonCols.includes(k) ? JSON.stringify(patch[k]) : patch[k]));
+    values.push(id);
+    sqlite.prepare(`UPDATE ${collection} SET ${sets} WHERE id = ?`).run(...values);
+    return this.find(collection, (r) => r.id === id);
   },
+
   remove(collection, predicate) {
-    const data = read();
-    const idx = data[collection].findIndex(predicate);
-    if (idx === -1) return false;
-    data[collection].splice(idx, 1);
-    write(data);
+    const matches = this.filter(collection, predicate);
+    if (!matches.length) return false;
+    const ids = matches.map((m) => m.id);
+    const ph = ids.map(() => '?').join(', ');
+    sqlite.prepare(`DELETE FROM ${collection} WHERE id IN (${ph})`).run(...ids);
     return true;
   },
 
-  // User specific
   async createUser({ fullName, username, password, mobile, avatar, bio, location, website, emoji }) {
-    const data = read();
     const hashed = await bcrypt.hash(password, 10);
-    const user = {
-      id: data.users.length ? Math.max(...data.users.map((u) => u.id)) + 1 : 1,
-      fullName,
-      username,
-      password: hashed,
-      mobile: mobile || null,
-      avatar: avatar || null,
-      emoji: emoji || '👤',
-      bio: bio || '',
-      location: location || '',
-      website: website || '',
-      followers: 0,
-      following: 0,
-      followingList: [],
-      followerList: [],
-      joinDate: new Date().toISOString(),
-      createdAt: new Date().toISOString()
-    };
-    data.users.push(user);
-    write(data);
-    return user;
+    sqlite
+      .prepare(
+        `INSERT INTO users (fullName, username, password, mobile, avatar, emoji, bio, location, website, joinDate, createdAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        fullName,
+        username,
+        hashed,
+        mobile || null,
+        avatar || null,
+        emoji || '👤',
+        bio || '',
+        location || '',
+        website || '',
+        new Date().toISOString(),
+        new Date().toISOString()
+      );
+    const id = Number(sqlite.prepare('SELECT last_insert_rowid() AS id').get().id);
+    return this.find('users', (u) => u.id === id);
   },
 
   getUserByUsername(username) {
-    return read().users.find((u) => u.username.toLowerCase() === String(username).toLowerCase());
+    const row = sqlite.prepare('SELECT * FROM users WHERE lower(username) = lower(?)').get(username);
+    return row ? mapRow('users', row) : undefined;
+  },
+
+  markMessagesRead(conversationId, viewerId) {
+    sqlite
+      .prepare('UPDATE messages SET read = 1 WHERE conversationId = ? AND senderId != ?')
+      .run(conversationId, viewerId);
   }
 };
 
@@ -109,6 +202,6 @@ export function publicUser(user, viewerId) {
   const { password, followingList, followerList, mobile, ...rest } = user;
   return {
     ...rest,
-    isFollowing: viewerId ? followingList?.includes(user.id) ?? false : false
+    isFollowing: viewerId ? followingList?.includes(viewerId) ?? false : false
   };
 }
