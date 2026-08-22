@@ -28,7 +28,7 @@ router.get('/:username', (req, res) => {
 router.patch('/me', authMiddleware, (req, res) => {
   const user = db.find('users', (u) => u.id === req.userId);
   if (!user) return res.status(404).json({ error: 'User not found' });
-  const { fullName, bio, location, website, emoji, avatar } = req.body;
+  const { fullName, bio, location, website, emoji, avatar, privateAccount, showMobile } = req.body;
   const patch = {};
   if (fullName !== undefined) patch.fullName = fullName;
   if (bio !== undefined) patch.bio = bio;
@@ -36,6 +36,8 @@ router.patch('/me', authMiddleware, (req, res) => {
   if (website !== undefined) patch.website = website;
   if (emoji !== undefined) patch.emoji = emoji;
   if (avatar !== undefined) patch.avatar = avatar;
+  if (privateAccount !== undefined) patch.privateAccount = privateAccount ? 1 : 0;
+  if (showMobile !== undefined) patch.showMobile = showMobile ? 1 : 0;
   const updated = db.update('users', user.id, patch);
   res.json({ user: publicUser(updated, req.userId) });
 });

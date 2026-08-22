@@ -20,6 +20,7 @@ sqlite.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     fullName TEXT,
     username TEXT UNIQUE,
+    email TEXT,
     password TEXT,
     mobile TEXT,
     avatar TEXT,
@@ -31,6 +32,13 @@ sqlite.exec(`
     following INTEGER DEFAULT 0,
     followingList TEXT DEFAULT '[]',
     followerList TEXT DEFAULT '[]',
+    tokenVersion INTEGER DEFAULT 0,
+    failedAttempts INTEGER DEFAULT 0,
+    lockUntil TEXT,
+    resetTokenHash TEXT,
+    resetTokenExpiry TEXT,
+    privateAccount INTEGER DEFAULT 0,
+    showMobile INTEGER DEFAULT 0,
     joinDate TEXT,
     createdAt TEXT
   );
@@ -78,6 +86,27 @@ sqlite.exec(`
     read INTEGER DEFAULT 0
   );
 `);
+
+// --- Schema migration: add columns that may be missing on an existing DB ---
+const USER_COLUMNS = {
+  email: 'TEXT',
+  tokenVersion: 'INTEGER DEFAULT 0',
+  failedAttempts: 'INTEGER DEFAULT 0',
+  lockUntil: 'TEXT',
+  resetTokenHash: 'TEXT',
+  resetTokenExpiry: 'TEXT',
+  privateAccount: 'INTEGER DEFAULT 0',
+  showMobile: 'INTEGER DEFAULT 0'
+};
+
+(function migrateUsers() {
+  const existing = new Set(sqlite.prepare('PRAGMA table_info(users)').all().map((r) => r.name));
+  for (const [col, def] of Object.entries(USER_COLUMNS)) {
+    if (!existing.has(col)) {
+      sqlite.exec(`ALTER TABLE users ADD COLUMN ${col} ${def}`);
+    }
+  }
+})();
 
 const JSON_COLS = {
   users: ['followingList', 'followerList'],
@@ -161,16 +190,17 @@ export const db = {
     return true;
   },
 
-  async createUser({ fullName, username, password, mobile, avatar, bio, location, website, emoji }) {
+  async createUser({ fullName, username, password, email, mobile, avatar, bio, location, website, emoji }) {
     const hashed = await bcrypt.hash(password, 10);
     sqlite
       .prepare(
-        `INSERT INTO users (fullName, username, password, mobile, avatar, emoji, bio, location, website, joinDate, createdAt)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO users (fullName, username, email, password, mobile, avatar, emoji, bio, location, website, joinDate, createdAt)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         fullName,
         username,
+        email || null,
         hashed,
         mobile || null,
         avatar || null,
@@ -190,6 +220,63 @@ export const db = {
     return row ? mapRow('users', row) : undefined;
   },
 
+  getUserByEmail(email) {
+    if (!email) return undefined;
+    const row = sqlite.prepare('SELECT * FROM users WHERE lower(email) = lower(?)').get(email);
+    return row ? mapRow('users', row) : undefined;
+  },
+
+  async setPassword(userId, password) {
+    const hashed = await bcrypt.hash(password, 10);
+    sqlite.prepare('UPDATE users SET password = ? WHERE id = ?').run(hashed, userId);
+  },
+
+  // Bump token version so all previously issued JWTs become invalid.
+  incrementTokenVersion(userId) {
+    sqlite.prepare('UPDATE users SET tokenVersion = tokenVersion + 1 WHERE id = ?').run(userId);
+    const u = this.find('users', (x) => x.id === userId);
+    return u ? u.tokenVersion : 0;
+  },
+
+  // Brute-force lockout tracking.
+  recordFailedLogin(userId, maxAttempts, lockMinutes) {
+    const now = Date.now();
+    const user = this.find('users', (u) => u.id === userId);
+    const attempts = (user.failedAttempts || 0) + 1;
+    let lockUntil = user.lockUntil || null;
+    if (attempts >= maxAttempts) {
+      lockUntil = new Date(now + lockMinutes * 60 * 1000).toISOString();
+    }
+    sqlite.prepare('UPDATE users SET failedAttempts = ?, lockUntil = ? WHERE id = ?').run(attempts, lockUntil, userId);
+    return { attempts, locked: !!lockUntil, lockUntil };
+  },
+
+  clearFailedLogin(userId) {
+    sqlite.prepare("UPDATE users SET failedAttempts = 0, lockUntil = NULL WHERE id = ?").run(userId);
+  },
+
+  isLocked(user) {
+    if (!user || !user.lockUntil) return false;
+    return new Date(user.lockUntil).getTime() > Date.now();
+  },
+
+  // Password reset tokens are stored only as a salted hash with an expiry.
+  setResetToken(userId, tokenHash, expiryISO) {
+    sqlite.prepare('UPDATE users SET resetTokenHash = ?, resetTokenExpiry = ? WHERE id = ?').run(tokenHash, expiryISO, userId);
+  },
+
+  clearResetToken(userId) {
+    sqlite.prepare('UPDATE users SET resetTokenHash = NULL, resetTokenExpiry = NULL WHERE id = ?').run(userId);
+  },
+
+  getUserByResetToken(tokenHash) {
+    const row = sqlite.prepare('SELECT * FROM users WHERE resetTokenHash = ?').get(tokenHash);
+    if (!row) return undefined;
+    const user = mapRow('users', row);
+    if (!user.resetTokenExpiry || new Date(user.resetTokenExpiry).getTime() < Date.now()) return undefined;
+    return user;
+  },
+
   markMessagesRead(conversationId, viewerId) {
     sqlite
       .prepare('UPDATE messages SET read = 1 WHERE conversationId = ? AND senderId != ?')
@@ -199,9 +286,13 @@ export const db = {
 
 export function publicUser(user, viewerId) {
   if (!user) return null;
-  const { password, followingList, followerList, mobile, ...rest } = user;
+  const { password, followingList, followerList, mobile, email, resetTokenHash, resetTokenExpiry, failedAttempts, lockUntil, ...rest } = user;
+  const isSelf = viewerId && viewerId === user.id;
+  // Mobile is private by default and only shown to the account owner.
+  const safeMobile = isSelf || user.showMobile ? mobile : undefined;
   return {
     ...rest,
+    mobile: safeMobile,
     isFollowing: viewerId ? followingList?.includes(viewerId) ?? false : false
   };
 }

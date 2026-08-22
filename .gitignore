@@ -7,3 +7,6 @@ server/data/
 *.db-wal
 *.log
 .DS_Store
+.env
+server/.env
+

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Signing you in… | Global Media</title>
+  <style>
+    body { font-family: system-ui, sans-serif; background: #14171a; color: #fff; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    .box { text-align: center; }
+    .spinner { width: 36px; height: 36px; border: 4px solid #333; border-top-color: #1da1f2; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div class="spinner"></div>
+    <p>Finishing Google sign-in…</p>
+  </div>
+
+  <script src="api.js"></script>
+  <script>
+    (function () {
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+      const user = params.get('user');
+      if (token && user) {
+        try {
+          API.setToken(token);
+          API.setCurrentUser(JSON.parse(user));
+          window.location.replace('index.html');
+          return;
+        } catch (e) { /* fall through */ }
+      }
+      const err = params.get('auth_error') || 'unknown';
+      window.location.replace('index.html?auth_error=' + encodeURIComponent(err));
+    })();
+  </script>
+</body>
+</html>

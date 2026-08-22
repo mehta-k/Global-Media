@@ -407,7 +407,7 @@
         function createDemoUser() {
             const suffix = Date.now() + Math.floor(Math.random() * 1000);
             const username = 'demo_' + suffix;
-            const password = 'demo' + suffix;
+            const password = 'Demo' + suffix;
             const fullName = 'Demo User ' + Math.floor(Math.random() * 9000 + 1000);
             API.post('/api/auth/signup', { fullName, username, password, mobileNumber: '+1 555 0100' })
                 .then((data) => {
@@ -422,10 +422,34 @@
                 });
         }
 
+        function socialLogin(provider) {
+            loginError.textContent = '';
+            const suffix = Date.now() + Math.floor(Math.random() * 1000);
+            const email = `${provider}_${suffix}@social.demo`;
+            const name = provider.charAt(0).toUpperCase() + provider.slice(1) + ' User';
+            API.post('/api/auth/social', { provider, name, email })
+                .then((data) => {
+                    API.setToken(data.token);
+                    API.setCurrentUser(data.user);
+                    applyUser(data.user);
+                    showApp();
+                    loadFeed();
+                })
+                .catch((err) => {
+                    loginError.textContent = err.message;
+                });
+        }
+
         document.querySelectorAll('[data-social]').forEach((button) => {
             button.addEventListener('click', () => {
-                if (button.dataset.social === 'demo') createDemoUser();
-                else alert('Social login with ' + button.dataset.social + ' is not available in this demo. Use "Continue as Demo User" or register.');
+                if (button.dataset.social === 'google') {
+                    // Real "Sign in with Google" → full-page OAuth redirect.
+                    window.location.href = '/api/auth/google';
+                } else if (button.dataset.social === 'demo') {
+                    createDemoUser();
+                } else {
+                    socialLogin(button.dataset.social);
+                }
             });
         });
 
@@ -440,9 +464,42 @@
             }
         });
 
-        recoverPasswordBtn.addEventListener('click', () => {
-            recoveryMessage.textContent = 'Password reset is not available in this demo backend. Please register a new account.';
-            recoveryMessage.style.color = 'var(--primary-color)';
+        recoverPasswordBtn.addEventListener('click', async () => {
+            const username = document.getElementById('recoveryUsername').value.trim();
+            const password = document.getElementById('recoveryPassword').value;
+            const confirm = document.getElementById('recoveryConfirmPassword').value;
+            recoveryMessage.style.color = 'var(--text-secondary)';
+            recoveryMessage.textContent = '';
+            if (!username || !password || !confirm) {
+                recoveryMessage.textContent = 'Please fill in all fields.';
+                return;
+            }
+            if (password.length < 8) {
+                recoveryMessage.textContent = 'Password must be at least 8 characters.';
+                return;
+            }
+            if (password !== confirm) {
+                recoveryMessage.textContent = 'Passwords do not match.';
+                return;
+            }
+            try {
+                const forgot = await API.post('/api/auth/forgot-password', { identifier: username });
+                if (!forgot.resetToken) {
+                    // In production the token is emailed; for local dev it is returned.
+                    recoveryMessage.textContent = forgot.message || 'Reset code generated.';
+                    return;
+                }
+                const reset = await API.post('/api/auth/reset-password', {
+                    token: forgot.resetToken,
+                    password,
+                    confirmPassword: confirm
+                });
+                recoveryMessage.style.color = 'var(--primary-color)';
+                recoveryMessage.textContent = reset.message || 'Password updated. You can now sign in.';
+                setTimeout(() => { recoveryModal.style.display = 'none'; }, 1500);
+            } catch (err) {
+                recoveryMessage.textContent = err.message || 'Could not reset password.';
+            }
         });
 
         loginForm.addEventListener('submit', function (e) {
@@ -453,9 +510,31 @@
         });
 
         logoutBtn.addEventListener('click', function () {
+            // Best-effort server-side logout to invalidate the token.
+            if (API.isLoggedIn()) {
+                API.post('/api/auth/logout').catch(() => {});
+            }
             API.logout();
             window.location.href = 'index.html';
         });
+
+        // Surface errors returned by the Google OAuth redirect (e.g. auth_error).
+        (function showAuthError() {
+            const err = new URLSearchParams(window.location.search).get('auth_error');
+            if (err && loginError) {
+                const messages = {
+                    access_denied: 'Google sign-in was cancelled.',
+                    missing_code: 'Google sign-in failed (missing code).',
+                    state_mismatch: 'Google sign-in failed (state mismatch).',
+                    token_exchange_failed: 'Google sign-in failed during token exchange.',
+                    no_email: 'Google account did not provide an email.',
+                    email_unverified: 'Your Google email is not verified.',
+                    google_callback_error: 'Google sign-in could not be completed.',
+                    configuration: 'Google sign-in is not configured on the server.'
+                };
+                loginError.textContent = messages[err] || 'Google sign-in failed.';
+            }
+        })();
 
         checkSession();
     </script>

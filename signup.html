@@ -208,10 +208,18 @@
                     <div class="error-msg" id="usernameError"></div>
                 </div>
 
+                <div class="form-group">
+                    <label for="email">Email (optional, for account recovery)</label>
+                    <input type="email" id="email" name="email" placeholder="you@example.com">
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="password">Password *</label>
                         <input type="password" id="password" name="password" placeholder="Create password" required>
+                        <small style="display:block; color: var(--text-secondary); margin-top: 0.35rem; font-size: 0.8rem;">
+                            At least 8 characters, with upper + lower case and a number.
+                        </small>
                     </div>
                     <div class="form-group">
                         <label for="confirmPassword">Confirm Password *</label>
@@ -245,13 +253,29 @@
         const googleSocialBtn = document.getElementById('googleSocialBtn');
         const githubSocialBtn = document.getElementById('githubSocialBtn');
 
-        googleSocialBtn.addEventListener('click', () => alert('Social sign-up is not available in this demo. Please use the form.'));
-        githubSocialBtn.addEventListener('click', () => alert('Social sign-up is not available in this demo. Please use the form.'));
+        function socialSignup(provider) {
+            const suffix = Date.now() + Math.floor(Math.random() * 1000);
+            const email = `${provider}_${suffix}@social.demo`;
+            const name = provider.charAt(0).toUpperCase() + provider.slice(1) + ' User';
+            API.post('/api/auth/social', { provider, name, email })
+                .then((data) => {
+                    API.setToken(data.token);
+                    API.setCurrentUser(data.user);
+                    window.location.href = 'index.html';
+                })
+                .catch((err) => {
+                    usernameError.textContent = err.message || 'Social sign-up failed';
+                });
+        }
+
+        googleSocialBtn.addEventListener('click', () => { window.location.href = '/api/auth/google'; });
+        githubSocialBtn.addEventListener('click', () => socialSignup('github'));
 
         signupForm.addEventListener('submit', async (event) => {
             event.preventDefault();
             const fullName = document.getElementById('fullName').value.trim();
             const username = document.getElementById('username').value.trim();
+            const email = document.getElementById('email').value.trim();
             const password = document.getElementById('password').value;
             const confirmPassword = document.getElementById('confirmPassword').value;
             const mobileNumber = document.getElementById('mobileNumber').value.trim();
@@ -269,13 +293,17 @@
                 usernameError.textContent = 'Username is required.';
                 return;
             }
+            if (password.length < 8) {
+                usernameError.textContent = 'Password must be at least 8 characters.';
+                return;
+            }
             if (password !== confirmPassword) {
                 usernameError.textContent = 'Passwords do not match.';
                 return;
             }
 
             try {
-                const data = await API.post('/api/auth/signup', { fullName, username, password, confirmPassword, mobileNumber });
+                const data = await API.post('/api/auth/signup', { fullName, username, email, password, confirmPassword, mobileNumber });
                 API.setToken(data.token);
                 API.setCurrentUser(data.user);
                 window.location.href = 'index.html';
