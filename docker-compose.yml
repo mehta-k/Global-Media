@@ -1,0 +1,17 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - global_media_data:/app/server/data
+      - ./server/.env:/app/server/.env:ro
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      # Set via .env file or uncomment:
+      # - JWT_SECRET=change_this_to_a_strong_random_secret_at_least_32_chars
+      # - CORS_ORIGIN=https://yourdomain.com
+    restart: unless-stopped
+volumes:
+  global_media_data:

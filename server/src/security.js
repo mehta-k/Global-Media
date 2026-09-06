@@ -11,7 +11,7 @@ export const PASSWORD_POLICY = {
 };
 
 export const USERNAME_REGEX = /^[a-zA-Z0-9_]{3,20}$/;
-export const EMAIL_REGEX = /^[^\\s@]+@[^\\s@]+\.[^\\s@]+$/;
+export const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 export const MOBILE_REGEX = /^\+?[0-9\s\-()]{7,20}$/;
 
 export function validateUsername(username) {
