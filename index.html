@@ -229,8 +229,6 @@
             <div class="divider">or continue with</div>
             <div class="social-login">
                 <button type="button" class="social-btn" data-social="google">🔵 Continue with Google</button>
-                <button type="button" class="social-btn" data-social="github">🐙 Continue with GitHub</button>
-                <button type="button" class="social-btn" data-social="demo">✨ Continue as Demo User</button>
             </div>
 
             <div class="auth-note">
@@ -404,51 +402,13 @@
                 });
         }
 
-        function createDemoUser() {
-            const suffix = Date.now() + Math.floor(Math.random() * 1000);
-            const username = 'demo_' + suffix;
-            const password = 'Demo' + suffix;
-            const fullName = 'Demo User ' + Math.floor(Math.random() * 9000 + 1000);
-            API.post('/api/auth/signup', { fullName, username, password, mobileNumber: '+1 555 0100' })
-                .then((data) => {
-                    API.setToken(data.token);
-                    API.setCurrentUser(data.user);
-                    applyUser(data.user);
-                    showApp();
-                    loadFeed();
-                })
-                .catch((err) => {
-                    loginError.textContent = err.message;
-                });
-        }
-
-        function socialLogin(provider) {
-            loginError.textContent = '';
-            const suffix = Date.now() + Math.floor(Math.random() * 1000);
-            const email = `${provider}_${suffix}@social.demo`;
-            const name = provider.charAt(0).toUpperCase() + provider.slice(1) + ' User';
-            API.post('/api/auth/social', { provider, name, email })
-                .then((data) => {
-                    API.setToken(data.token);
-                    API.setCurrentUser(data.user);
-                    applyUser(data.user);
-                    showApp();
-                    loadFeed();
-                })
-                .catch((err) => {
-                    loginError.textContent = err.message;
-                });
-        }
+        
 
         document.querySelectorAll('[data-social]').forEach((button) => {
             button.addEventListener('click', () => {
                 if (button.dataset.social === 'google') {
                     // Real "Sign in with Google" → full-page OAuth redirect.
                     window.location.href = '/api/auth/google';
-                } else if (button.dataset.social === 'demo') {
-                    createDemoUser();
-                } else {
-                    socialLogin(button.dataset.social);
                 }
             });
         });

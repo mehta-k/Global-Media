@@ -237,7 +237,6 @@
 
             <div style="display: grid; gap: 0.75rem; margin-top: 1.25rem;">
                 <button type="button" id="googleSocialBtn" class="submit-btn" style="margin-top: 0; background: #FFFFFF; color: #1DA1F2; border: 1px solid var(--border-color); box-shadow: none;">🔵 Continue with Google</button>
-                <button type="button" id="githubSocialBtn" class="submit-btn" style="margin-top: 0; background: #111827; color: white; border: 1px solid var(--border-color); box-shadow: none;">🐙 Continue with GitHub</button>
             </div>
 
             <div class="back-link">
@@ -251,25 +250,8 @@
     <script>
         const signupForm = document.getElementById('signupForm');
         const googleSocialBtn = document.getElementById('googleSocialBtn');
-        const githubSocialBtn = document.getElementById('githubSocialBtn');
-
-        function socialSignup(provider) {
-            const suffix = Date.now() + Math.floor(Math.random() * 1000);
-            const email = `${provider}_${suffix}@social.demo`;
-            const name = provider.charAt(0).toUpperCase() + provider.slice(1) + ' User';
-            API.post('/api/auth/social', { provider, name, email })
-                .then((data) => {
-                    API.setToken(data.token);
-                    API.setCurrentUser(data.user);
-                    window.location.href = 'index.html';
-                })
-                .catch((err) => {
-                    usernameError.textContent = err.message || 'Social sign-up failed';
-                });
-        }
 
         googleSocialBtn.addEventListener('click', () => { window.location.href = '/api/auth/google'; });
-        githubSocialBtn.addEventListener('click', () => socialSignup('github'));
 
         signupForm.addEventListener('submit', async (event) => {
             event.preventDefault();
