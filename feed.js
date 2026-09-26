@@ -18,10 +18,16 @@ function avatarMarkup(author) {
   return `<div class="post-avatar" style="width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FF006E 0%,#8338EC 100%);display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">${emoji}</div>`;
 }
 
+function parseHashtags(text) {
+  if (!text) return text;
+  return text.replace(/#(\w+)/g, '<a href="#" class="hashtag">#$1</a>');
+}
+
 function createPostElement(post) {
   const el = document.createElement('div');
   el.className = 'post';
   el.style.cssText = 'background:var(--bg-primary);border:1px solid var(--border-color);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;';
+  const contentHtml = parseHashtags(post.content);
   el.innerHTML = `
     <div class="post-header" style="display:flex;align-items:center;gap:0.75rem;">
       ${avatarMarkup(post.author)}
@@ -31,8 +37,8 @@ function createPostElement(post) {
         <span class="post-time" style="color:var(--text-secondary);">· ${post.timestamp || timeAgo(post.createdAt)}</span>
       </div>
     </div>
-    <div class="post-content" style="margin:0.75rem 0;line-height:1.5;">${escapeHtml(post.content)}</div>
-    ${post.image ? `<img src="${post.image}" alt="Post image" class="post-image" style="width:100%;border-radius:12px;margin-bottom:0.75rem;">` : ''}
+    <div class="post-content" style="margin:0.75rem 0;line-height:1.5;">${contentHtml}</div>
+    ${post.image ? `<img src="${post.image}" alt="Post image" class="post-image" style="width:100%;border-radius:12px;margin:0.75rem 0;">` : ''}
     <div class="post-actions" style="display:flex;gap:1.5rem;color:var(--text-secondary);">
       <button class="action-btn" data-act="like" style="background:none;border:none;cursor:pointer;font-size:1rem;">${post.liked ? '❤️' : '🤍'} <span class="action-count">${post.likes}</span></button>
       <button class="action-btn" data-act="comment" style="background:none;border:none;cursor:pointer;font-size:1rem;">💬 <span class="action-count">${post.comments}</span></button>
@@ -48,6 +54,13 @@ function createPostElement(post) {
   el.querySelector('[data-act="save"]').addEventListener('click', () => toggleSave(post.id, el));
   el.querySelector('[data-act="share"]').addEventListener('click', () => sharePost(post));
   el.querySelector('[data-act="comment"]').addEventListener('click', () => openComments(post.id, el));
+  el.querySelectorAll('.hashtag').forEach((tag) => {
+    tag.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tagName = tag.textContent.replace('#', '');
+      searchPostsByTag(tagName);
+    });
+  });
   return el;
 }
 
@@ -84,6 +97,17 @@ async function loadFeed() {
 }
 
 window.loadFeed = loadFeed;
+
+async function searchPostsByTag(tag) {
+  try {
+    const data = await API.get(`/api/explore/tags/${tag}`);
+    feedPosts = data.posts;
+    renderPosts();
+  } catch (err) {
+    console.error('Failed to search posts by tag', err);
+    showNotification('Could not load posts for this tag.');
+  }
+}
 
 async function createPost() {
   const input = document.getElementById('postInput');

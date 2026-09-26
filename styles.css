@@ -656,6 +656,28 @@ body {
     font-weight: bold;
 }
 
+/* Hashtag Links */
+a.hashtag {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    background: rgba(254, 127, 45, 0.15);
+    padding: 0.15rem 0.4rem;
+    border-radius: 10px;
+    margin: 0 0.1rem;
+    display: inline-block;
+}
+
+a.hashtag:hover {
+    background: rgba(255, 0, 110, 0.3);
+    transform: scale(1.05);
+}
+
+a.hashtag:active {
+    background: rgba(255, 0, 110, 0.2);
+}
+
 /* Trending Enhanced */
 .trending-item {
     padding: 0.75rem;

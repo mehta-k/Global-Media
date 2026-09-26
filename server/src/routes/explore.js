@@ -44,4 +44,14 @@ router.get('/', (req, res) => {
   res.json({ posts, users, trends });
 });
 
+// Search posts by specific hashtag
+router.get('/tags/:tag', (req, res) => {
+  const tag = `#${req.params.tag.toLowerCase()}`;
+  const data = db.all();
+  const matchingPosts = data.posts.filter((p) => {
+    return p.content.toLowerCase().includes(tag);
+  });
+  res.json({ posts: matchingPosts.map((p) => serializePost(p, req.userId)) });
+});
+
 export default router;
